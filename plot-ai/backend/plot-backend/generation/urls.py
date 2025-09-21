@@ -7,7 +7,7 @@ from .views import (
 )
 from .views.mermaid_views import (
     generate_mermaid_from_story, generate_mermaid_from_description,
-    generate_mermaid_svg, mermaid_health_check
+    generate_mermaid_svg, mermaid_health_check, generate_four_flowcharts
 )
 from .views.test_views import (
     test_mermaid_generation, test_mermaid_svg, 
@@ -27,6 +27,7 @@ urlpatterns = [
     # Mermaid-specific endpoints
     path('mermaid/story/<uuid:story_id>/', generate_mermaid_from_story, name='mermaid-from-story'),
     path('mermaid/generate/', generate_mermaid_from_description, name='mermaid-from-description'),
+    path('mermaid/generate-four/', generate_four_flowcharts, name='mermaid-generate-four'),
     path('mermaid/svg/', generate_mermaid_svg, name='mermaid-svg'),
     path('mermaid/health/', mermaid_health_check, name='mermaid-health'),
 

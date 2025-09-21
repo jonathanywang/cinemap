@@ -21,21 +21,32 @@ export const parseMermaidFlowchart = (mermaidText: string): MermaidParseResult =
   const lines = mermaidText
     .split('\n')
     .map(line => line.trim())
-    .filter(line => line && !line.startsWith('%%') && !line.startsWith('flowchart') && !line.startsWith('graph'));
+    .filter(line => line && !line.startsWith('%%') && !line.startsWith('flowchart') && !line.startsWith('graph') && !line.startsWith('subgraph') && line !== 'end');
 
   const nodes: MermaidNode[] = [];
   const edges: MermaidEdge[] = [];
   const nodeMap = new Map<string, string>();
 
   lines.forEach(line => {
-    const nodeDefMatch = line.match(/(\w+)\[([^\]]+)\]|(\w+)\("([^"]+)"\)|(\w+)\(([^)]+)\)|(\w+)\(\(([^)]+)\)\)|(\w+)\{([^}]+)\}|(\w+)>([^<]+)<|(\w+)\/([^\/]+)\\/);
+    // Enhanced regex to handle all mermaid node types including:
+    // [text], (text), ((text)), {text}, >text<, /text/, "text", [[text]], [(text)], [/text/]
+    const nodeDefMatch = line.match(/(\w+)(?:\[([^\]]+)\]|\("([^"]+)"\)|\(([^)]+)\)|\(\(([^)]+)\)\)|\{([^}]+)\}|>([^<]+)<|\/([^\/]+)\/|\[\[([^\]]+)\]\]|\[\/([^\/]+)\/\]|\[\(([^)]+)\)\])/);
+
     if (nodeDefMatch) {
-      const nodeId = nodeDefMatch[1] || nodeDefMatch[3] || nodeDefMatch[5] || nodeDefMatch[7] || nodeDefMatch[9] || nodeDefMatch[11] || nodeDefMatch[13];
-      const label = nodeDefMatch[2] || nodeDefMatch[4] || nodeDefMatch[6] || nodeDefMatch[8] || nodeDefMatch[10] || nodeDefMatch[12] || nodeDefMatch[14];
+      const nodeId = nodeDefMatch[1];
+      // Find the first non-empty label from all capturing groups
+      let label = '';
+      for (let i = 2; i < nodeDefMatch.length; i++) {
+        if (nodeDefMatch[i] && nodeDefMatch[i].trim()) {
+          label = nodeDefMatch[i].trim();
+          break;
+        }
+      }
 
       if (nodeId && label) {
         nodeMap.set(nodeId, label);
         if (!nodes.find(n => n.id === nodeId)) {
+          // Extract act number from label if present
           let actNumber: 1 | 2 | 3 | undefined;
           const actMatch = label.match(/Act\s*([I1]|II|2|III|3)(?:\s*:|\s|$)/i);
           if (actMatch) {
@@ -45,34 +56,58 @@ export const parseMermaidFlowchart = (mermaidText: string): MermaidParseResult =
             else if (actStr === 'III' || actStr === '3') actNumber = 3;
           }
 
-          const cleanLabel = label.replace(/^Act\s*([I1]|II|2|III|3)(?:\s*:\s*|\s+)/i, '');
+          // Clean up the label by removing act prefix and handling truncation
+          let cleanLabel = label.replace(/^Act\s*([I1]|II|2|III|3)(?:\s*:\s*|\s+)/i, '');
+
+          // Handle truncated labels (those ending with ...)
+          if (cleanLabel.includes('...')) {
+            cleanLabel = cleanLabel.replace(/\.\.\..*$/, '').trim();
+            if (cleanLabel.length > 0) {
+              cleanLabel += '...';
+            }
+          }
+
+          // Clean up common prefixes
+          cleanLabel = cleanLabel.replace(/^(Start:|End:|Complete:|Process:)\s*/i, '');
 
           nodes.push({
             id: nodeId,
-            label: cleanLabel || label,
+            label: cleanLabel || label, // fallback to original if cleaning results in empty
             actNumber
           });
         }
       }
     }
 
-    const connectionMatch = line.match(/(\w+)\s*(-->|---|\.-\.->|\.-\.-|==>|==|->|-\.->|<-->|<->|-.->|\.\.\.|===|~~~)\s*\|?([^|]*)\|?\s*(\w+)/);
+    // Enhanced regex to handle all mermaid connection types and conditional labels
+    // Matches: A --> B, A -->|Yes| B, A --Yes--> B, A -.->|Maybe| B, etc.
+    const connectionMatch = line.match(/(\w+)\s*(-{1,3}>?|={1,3}>?|\.{1,3}->?|-\.{1,3}->?|<-{1,3}>?|<-{1,3}|x-{1,3}x|o-{1,3}o|\|-{1,3}\||~{1,3}~|--\s*([^-|>]+)\s*-->|==\s*([^=|>]+)\s*==>)\s*(?:\|([^|]*)\|)?\s*(\w+)/);
+
     if (connectionMatch) {
-      const [, source, , edgeLabel, target] = connectionMatch;
-      const cleanEdgeLabel = edgeLabel?.trim();
+      const source = connectionMatch[1];
+      const connector = connectionMatch[2];
+      const inlineLabel = connectionMatch[3] || connectionMatch[4]; // For --label--> or ==label==> style
+      const pipeLabel = connectionMatch[5]; // For |label| style
+      const target = connectionMatch[6];
 
-      [source, target].forEach(nodeId => {
-        if (!nodeMap.has(nodeId) && !nodes.find(n => n.id === nodeId)) {
-          nodeMap.set(nodeId, nodeId);
-          nodes.push({ id: nodeId, label: nodeId });
-        }
-      });
+      // Prioritize pipe labels over inline labels
+      const edgeLabel = (pipeLabel || inlineLabel)?.trim();
 
-      edges.push({
-        source,
-        target,
-        label: cleanEdgeLabel && cleanEdgeLabel.length > 0 ? cleanEdgeLabel : undefined
-      });
+      if (source && target) {
+        // Add nodes if they don't exist (for cases where connections are defined before nodes)
+        [source, target].forEach(nodeId => {
+          if (!nodeMap.has(nodeId) && !nodes.find(n => n.id === nodeId)) {
+            nodeMap.set(nodeId, nodeId);
+            nodes.push({ id: nodeId, label: nodeId });
+          }
+        });
+
+        edges.push({
+          source,
+          target,
+          label: edgeLabel && edgeLabel.length > 0 ? edgeLabel : undefined
+        });
+      }
     }
   });
 
@@ -116,6 +151,7 @@ export const convertMermaidToStoryNodes = (mermaidResult: MermaidParseResult): S
     const childrenMap = new Map<string, string[]>();
     const levelMap = new Map<string, number>();
 
+    // Build children map for hierarchy
     edges.forEach(edge => {
       if (!childrenMap.has(edge.source)) {
         childrenMap.set(edge.source, []);
@@ -123,11 +159,13 @@ export const convertMermaidToStoryNodes = (mermaidResult: MermaidParseResult): S
       childrenMap.get(edge.source)!.push(edge.target);
     });
 
+    // Find root nodes (nodes with no parents)
     const rootNodes = nodes.filter(node => !parentMap.has(node.id));
     if (rootNodes.length === 0 && nodes.length > 0) {
       rootNodes.push(nodes[0]);
     }
 
+    // Calculate hierarchical levels using BFS
     const queue = rootNodes.map(node => ({ id: node.id, level: 0 }));
 
     while (queue.length > 0) {
@@ -145,6 +183,7 @@ export const convertMermaidToStoryNodes = (mermaidResult: MermaidParseResult): S
       });
     }
 
+    // Group nodes by level for positioning
     const levelGroups = new Map<number, string[]>();
     nodes.forEach(node => {
       const level = levelMap.get(node.id) || 0;
@@ -154,52 +193,142 @@ export const convertMermaidToStoryNodes = (mermaidResult: MermaidParseResult): S
       levelGroups.get(level)!.push(node.id);
     });
 
-    const nodeWidth = 300;
-    const nodeHeight = 120;
-    const levelHeight = 180;
-    const minSpacing = 50;
+    // Enhanced positioning algorithm
+    const nodeWidth = 200;
+    const nodeHeight = 100;
+    const levelHeight = 150;
+    const horizontalSpacing = 80;
+    const centerX = 400; // Center point for alignment
 
     levelGroups.forEach((nodeIds, level) => {
       const nodesInLevel = nodeIds.length;
 
-      nodeIds.forEach((nodeId, index) => {
-        const parentId = parentMap.get(nodeId);
-        const siblings = parentId ? (childrenMap.get(parentId) || []) : nodeIds;
-        const siblingIndex = parentId ? siblings.indexOf(nodeId) : index;
-        const totalSiblings = parentId ? siblings.length : nodesInLevel;
+      if (nodesInLevel === 1) {
+        // Single node - center it
+        positions.set(nodeIds[0], { x: centerX, y: level * levelHeight + 50 });
+      } else {
+        // Multiple nodes - distribute evenly around center
+        const totalWidth = (nodesInLevel - 1) * (nodeWidth + horizontalSpacing);
+        const startX = centerX - totalWidth / 2;
 
-        const x = parentId && positions.has(parentId)
-          ? positions.get(parentId)!.x + (siblingIndex - (totalSiblings - 1) / 2) * (nodeWidth + minSpacing)
-          : index * (nodeWidth + minSpacing);
+        nodeIds.forEach((nodeId, index) => {
+          const x = startX + index * (nodeWidth + horizontalSpacing);
+          const y = level * levelHeight + 50;
 
-        const y = level * (nodeHeight + levelHeight);
-
-        positions.set(nodeId, {
-          x,
-          y
+          positions.set(nodeId, { x, y });
         });
-      });
+      }
+    });
+
+    // Handle positioning for nodes not yet positioned (isolated nodes)
+    let fallbackX = 100;
+    let fallbackY = 50;
+
+    nodes.forEach(node => {
+      if (!positions.has(node.id)) {
+        positions.set(node.id, { x: fallbackX, y: fallbackY });
+        fallbackX += nodeWidth + horizontalSpacing;
+        if (fallbackX > 800) {
+          fallbackX = 100;
+          fallbackY += levelHeight;
+        }
+      }
     });
 
     return { positions, levelMap };
   };
 
-  const { positions, levelMap } = calculateHierarchicalPositions(mermaidResult.nodes, mermaidResult.edges);
+  // Add cycle detection and prevention
+  const sanitizeEdges = (edges: MermaidEdge[]): MermaidEdge[] => {
+    const visited = new Set<string>();
+    const recursionStack = new Set<string>();
+    const validEdges: MermaidEdge[] = [];
+    const adjacencyList = new Map<string, string[]>();
+
+    // Build adjacency list
+    edges.forEach(edge => {
+      if (!adjacencyList.has(edge.source)) {
+        adjacencyList.set(edge.source, []);
+      }
+      adjacencyList.get(edge.source)!.push(edge.target);
+    });
+
+    // DFS to detect cycles
+    const hasCycle = (node: string): boolean => {
+      if (recursionStack.has(node)) return true;
+      if (visited.has(node)) return false;
+
+      visited.add(node);
+      recursionStack.add(node);
+
+      const neighbors = adjacencyList.get(node) || [];
+      for (const neighbor of neighbors) {
+        if (hasCycle(neighbor)) return true;
+      }
+
+      recursionStack.delete(node);
+      return false;
+    };
+
+    // Check each edge for creating cycles
+    for (const edge of edges) {
+      // Temporarily add this edge
+      if (!adjacencyList.has(edge.source)) {
+        adjacencyList.set(edge.source, []);
+      }
+      adjacencyList.get(edge.source)!.push(edge.target);
+
+      // Reset visited sets for fresh cycle detection
+      visited.clear();
+      recursionStack.clear();
+
+      // Check if adding this edge creates a cycle
+      let createsCycle = false;
+      for (const node of mermaidResult.nodes.map(n => n.id)) {
+        if (!visited.has(node) && hasCycle(node)) {
+          createsCycle = true;
+          break;
+        }
+      }
+
+      if (!createsCycle) {
+        validEdges.push(edge);
+      } else {
+        // Remove the edge we just added
+        const neighbors = adjacencyList.get(edge.source)!;
+        const index = neighbors.lastIndexOf(edge.target);
+        if (index > -1) neighbors.splice(index, 1);
+      }
+    }
+
+    return validEdges;
+  };
+
+  const sanitizedEdges = sanitizeEdges(mermaidResult.edges);
+  const sanitizedResult = { ...mermaidResult, edges: sanitizedEdges };
+
+  const { positions, levelMap } = calculateHierarchicalPositions(sanitizedResult.nodes, sanitizedResult.edges);
   const maxLevel = Math.max(...Array.from(levelMap.values()), 0);
+
+  // Rebuild parent map with sanitized edges
+  const sanitizedParentMap = new Map<string, string>();
+  sanitizedEdges.forEach(edge => {
+    sanitizedParentMap.set(edge.target, edge.source);
+  });
 
   return mermaidResult.nodes.map(node => {
     const level = levelMap.get(node.id) || 0;
     const actNumber = inferActNumber(node, level, maxLevel);
-    const position = positions.get(node.id) || { x: 0, y: level * 250 };
+    const position = positions.get(node.id) || { x: 0, y: level * 150 };
 
     return {
       id: node.id,
       story_id: '',
       act_number: actNumber,
       title: node.label,
-      summary: '',
+      summary: `${node.label} - Act ${actNumber}`,
       details: '',
-      parent_node_id: parentMap.get(node.id),
+      parent_node_id: sanitizedParentMap.get(node.id),
       position
     } as StoryNode;
   });

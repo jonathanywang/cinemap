@@ -38,7 +38,7 @@ interface NodeFormData {
 const getActColor = (actNumber: 1 | 2 | 3): string => {
   switch (actNumber) {
     case 1: return '#3B82F6'; // blue
-    case 2: return '#EAB308'; // yellow  
+    case 2: return '#EAB308'; // yellow
     case 3: return '#EF4444'; // red
     default: return '#6B7280'; // gray
   }
@@ -47,7 +47,7 @@ const getActColor = (actNumber: 1 | 2 | 3): string => {
 const FlowchartViewInner: React.FC<FlowchartViewProps> = ({ nodes: storyNodes, onNodeClick, onNodesChange, onMermaidImport }) => {
   const reactFlowInstance = useReactFlow();
   const connectingNodeId = useRef<string | null>(null);
-  
+
   // Modal states
   const [isAddNodeModalOpen, setIsAddNodeModalOpen] = useState(false);
   const [isEditNodeModalOpen, setIsEditNodeModalOpen] = useState(false);
@@ -56,7 +56,7 @@ const FlowchartViewInner: React.FC<FlowchartViewProps> = ({ nodes: storyNodes, o
   const [selectedNodes, setSelectedNodes] = useState<string[]>([]);
   const [selectedEdges, setSelectedEdges] = useState<string[]>([]);
   const [mermaidText, setMermaidText] = useState('');
-  
+
   // Form states
   const [nodeForm, setNodeForm] = useState<NodeFormData>({
     title: '',
@@ -64,7 +64,7 @@ const FlowchartViewInner: React.FC<FlowchartViewProps> = ({ nodes: storyNodes, o
     details: '',
     act_number: 1
   });
-  
+
   const [newNodePosition, setNewNodePosition] = useState({ x: 0, y: 0 });
 
   // Convert StoryNode to ReactFlow Node format
@@ -182,7 +182,7 @@ const FlowchartViewInner: React.FC<FlowchartViewProps> = ({ nodes: storyNodes, o
       x: event.clientX,
       y: event.clientY,
     });
-    
+
     setNewNodePosition(position);
   }, [reactFlowInstance]);
 
@@ -192,7 +192,7 @@ const FlowchartViewInner: React.FC<FlowchartViewProps> = ({ nodes: storyNodes, o
       x: event.clientX,
       y: event.clientY,
     });
-    
+
     setNewNodePosition(position);
     setIsAddNodeModalOpen(true);
   }, [reactFlowInstance]);
@@ -233,8 +233,8 @@ const FlowchartViewInner: React.FC<FlowchartViewProps> = ({ nodes: storyNodes, o
     };
 
     const updatedReactFlowNode = convertToReactFlowNode(updatedStoryNode);
-    setNodes((nds) => 
-      nds.map((node) => 
+    setNodes((nds) =>
+      nds.map((node) =>
         node.id === editingNode.id ? updatedReactFlowNode : node
       )
     );
@@ -242,7 +242,7 @@ const FlowchartViewInner: React.FC<FlowchartViewProps> = ({ nodes: storyNodes, o
 
     // Notify parent component
     if (onNodesChange) {
-      const updatedStoryNodes = storyNodes.map(node => 
+      const updatedStoryNodes = storyNodes.map(node =>
         node.id === editingNode.id ? updatedStoryNode : node
       );
       onNodesChange(updatedStoryNodes);
@@ -251,11 +251,11 @@ const FlowchartViewInner: React.FC<FlowchartViewProps> = ({ nodes: storyNodes, o
 
   const handleDeleteSelected = useCallback(() => {
     if (selectedNodes.length === 0 && selectedEdges.length === 0) return;
-    
+
     if (window.confirm(`Are you sure you want to delete ${selectedNodes.length} node(s) and ${selectedEdges.length} edge(s)?`)) {
       setNodes((nds) => nds.filter((node) => !selectedNodes.includes(node.id)));
       setEdges((eds) => eds.filter((edge) => !selectedEdges.includes(edge.id)));
-      
+
       // Notify parent component
       if (onNodesChange) {
         const updatedStoryNodes = storyNodes.filter(node => !selectedNodes.includes(node.id));
@@ -393,7 +393,7 @@ const FlowchartViewInner: React.FC<FlowchartViewProps> = ({ nodes: storyNodes, o
           <div className="bg-white rounded-lg p-6 w-full max-w-md mx-4">
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-lg font-semibold text-gray-900">Add New Node</h3>
-              <button 
+              <button
                 onClick={closeAddNodeModal}
                 className="text-gray-400 hover:text-gray-600"
               >
@@ -476,7 +476,7 @@ const FlowchartViewInner: React.FC<FlowchartViewProps> = ({ nodes: storyNodes, o
           <div className="bg-white rounded-lg p-6 w-full max-w-md mx-4">
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-lg font-semibold text-gray-900">Edit Node</h3>
-              <button 
+              <button
                 onClick={closeEditNodeModal}
                 className="text-gray-400 hover:text-gray-600"
               >
@@ -575,7 +575,7 @@ const FlowchartViewInner: React.FC<FlowchartViewProps> = ({ nodes: storyNodes, o
                   Mermaid Flowchart
                 </label>
                 <p className="text-xs text-gray-500 mb-2">
-                  Paste your Mermaid flowchart syntax. Supports node definitions like A[Label], connections like A {'->'} B, and act numbers (Act 1, Act I, etc.)
+                  Paste your Mermaid flowchart syntax. Supports node definitions like A[Label], connections like A --&gt; B, and act numbers (Act 1, Act I, etc.)
                 </p>
                 <textarea
                   value={mermaidText}
