@@ -3,6 +3,7 @@ import { Story, StoryNode, Flowchart } from '../types';
 import Sidebar from '../components/sidebar';
 import FlowchartView from '../components/flowchart';
 import ScenePanel from '../components/scene';
+import { parseMermaidFlowchart, convertMermaidToStoryNodes } from '../utils/mermaid';
 
 interface Character {
     id: string;
@@ -162,6 +163,97 @@ const MainApp: React.FC = () => {
         setSelectedNode(node);
     };
 
+    // API functions to fetch stories from backend
+    const fetchStory1 = async () => {
+        try {
+            const response = await fetch('http://localhost:8000/api/test/mermaid/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    description: 'Create a movie plot flowchart for a superhero origin story with character development, mentor meeting, villain confrontation, and final battle with multiple branching paths for different outcomes.'
+                })
+            });
+
+            const data = await response.json();
+
+            if (data.success && data.mermaid_code) {
+                const mermaidResult = parseMermaidFlowchart(data.mermaid_code);
+                const storyNodes = convertMermaidToStoryNodes(mermaidResult);
+
+                // Update Story 1 flowchart
+                setFlowcharts(prev => prev.map(flowchart =>
+                    flowchart.id === 'customer-support'
+                        ? { ...flowchart, nodes: storyNodes, title: 'Story 1' }
+                        : flowchart
+                ));
+            }
+        } catch (error) {
+            console.error('Error fetching Story 1:', error);
+        }
+    };
+
+    const fetchStory2 = async () => {
+        try {
+            const response = await fetch('http://localhost:8000/api/test/mermaid/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    description: 'Design a romantic comedy plot structure with meet-cute, misunderstanding, separation, and reunion scenes with branching paths for different relationship outcomes.'
+                })
+            });
+
+            const data = await response.json();
+
+            if (data.success && data.mermaid_code) {
+                const mermaidResult = parseMermaidFlowchart(data.mermaid_code);
+                const storyNodes = convertMermaidToStoryNodes(mermaidResult);
+
+                // Update Story 2 flowchart
+                setFlowcharts(prev => prev.map(flowchart =>
+                    flowchart.id === 'software-development'
+                        ? { ...flowchart, nodes: storyNodes, title: 'Story 2' }
+                        : flowchart
+                ));
+            }
+        } catch (error) {
+            console.error('Error fetching Story 2:', error);
+        }
+    };
+
+    const fetchStory3 = async () => {
+        try {
+            const response = await fetch('http://localhost:8000/api/test/mermaid/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    description: 'Create a thriller heist movie flowchart with team assembly, planning phase, execution, complications, and escape sequences with multiple branching outcomes.'
+                })
+            });
+
+            const data = await response.json();
+
+            if (data.success && data.mermaid_code) {
+                const mermaidResult = parseMermaidFlowchart(data.mermaid_code);
+                const storyNodes = convertMermaidToStoryNodes(mermaidResult);
+
+                // Update Story 3 flowchart
+                setFlowcharts(prev => prev.map(flowchart =>
+                    flowchart.id === 'order-processing'
+                        ? { ...flowchart, nodes: storyNodes, title: 'Story 3' }
+                        : flowchart
+                ));
+            }
+        } catch (error) {
+            console.error('Error fetching Story 3:', error);
+        }
+    };
+
     const handleFlowchartChange = (flowchartId: string) => {
         setActiveFlowchartId(flowchartId);
         setSelectedNode(null); // Clear selected node when switching flowcharts
@@ -171,8 +263,8 @@ const MainApp: React.FC = () => {
         const newFlowchartId = `flowchart-${Date.now()}`;
         const newFlowchart: Flowchart = {
             id: newFlowchartId,
-            title: `Flowchart ${flowcharts.length + 1}`,
-            description: 'New flowchart ready for import',
+            title: `Story ${flowcharts.length + 1}`,
+            description: 'New story ready for import',
             nodes: [],
             created_at: new Date().toISOString(),
             updated_at: new Date().toISOString()
@@ -403,7 +495,11 @@ const MainApp: React.FC = () => {
         {
             id: 'customer-support',
             title: 'Story 1',
+<<<<<<< Updated upstream
             description: 'Story idea #1',
+=======
+            description: 'Complete customer support process from inquiry to resolution',
+>>>>>>> Stashed changes
             nodes: [
         {
             id: 'A',
@@ -530,7 +626,11 @@ const MainApp: React.FC = () => {
         {
             id: 'software-development',
             title: 'Story 2',
+<<<<<<< Updated upstream
             description: 'Story idea #2',
+=======
+            description: 'Complete software development lifecycle with branching paths',
+>>>>>>> Stashed changes
             nodes: [
                 {
                     id: 'REQ',
@@ -657,7 +757,11 @@ const MainApp: React.FC = () => {
         {
             id: 'order-processing',
             title: 'Story 3',
+<<<<<<< Updated upstream
             description: 'Story idea #3',
+=======
+            description: 'Complete e-commerce order flow with payment and shipping options',
+>>>>>>> Stashed changes
             nodes: [
                 {
                     id: 'BROWSE',
@@ -851,6 +955,24 @@ const MainApp: React.FC = () => {
         'Foil',
         'Other'
     ];
+
+    // Load stories from API on component mount
+    useEffect(() => {
+        const loadAllStories = async () => {
+            try {
+                await Promise.all([
+                    fetchStory1(),
+                    fetchStory2(),
+                    fetchStory3()
+                ]);
+                console.log('All stories loaded from API');
+            } catch (error) {
+                console.error('Error loading stories:', error);
+            }
+        };
+
+        loadAllStories();
+    }, []);
 
     return (
         <div className="h-screen flex bg-background">

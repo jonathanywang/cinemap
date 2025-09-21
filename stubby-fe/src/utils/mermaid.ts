@@ -320,7 +320,7 @@ export const convertMermaidToStoryNodes = (mermaidResult: MermaidParseResult): S
       story_id: '',
       act_number: actNumber,
       title: node.label,
-      summary: `${node.label} - Act ${actNumber}`,
+      summary: '',
       details: '',
       parent_node_id: sanitizedParentMap.get(node.id),
       position

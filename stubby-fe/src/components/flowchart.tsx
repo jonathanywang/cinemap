@@ -75,7 +75,7 @@ const FlowchartViewInner: React.FC<FlowchartViewProps> = ({ nodes: storyNodes, o
     data: {
       label: (
         <div className="p-2 text-center">
-          <div className="font-semibold text-sm">{node.title}</div>
+          <div className="font-semibold text-sm leading-tight">{node.title}</div>
           <div className="text-xs text-gray-200 mt-1">{node.summary}</div>
           <div className="text-xs text-gray-300 mt-1">Act {node.act_number}</div>
         </div>
@@ -89,8 +89,10 @@ const FlowchartViewInner: React.FC<FlowchartViewProps> = ({ nodes: storyNodes, o
       color: 'white',
       width: 240,
       height: 80,
-      fontSize: '12px',
-      padding: '8px'
+      fontSize: '10px',
+      padding: '4px',
+      wordWrap: 'break-word',
+      overflow: 'hidden'
     }
   });
 
