@@ -495,11 +495,7 @@ const MainApp: React.FC = () => {
         {
             id: 'customer-support',
             title: 'Story 1',
-<<<<<<< Updated upstream
             description: 'Story idea #1',
-=======
-            description: 'Complete customer support process from inquiry to resolution',
->>>>>>> Stashed changes
             nodes: [
         {
             id: 'A',
@@ -626,11 +622,7 @@ const MainApp: React.FC = () => {
         {
             id: 'software-development',
             title: 'Story 2',
-<<<<<<< Updated upstream
             description: 'Story idea #2',
-=======
-            description: 'Complete software development lifecycle with branching paths',
->>>>>>> Stashed changes
             nodes: [
                 {
                     id: 'REQ',
@@ -757,11 +749,7 @@ const MainApp: React.FC = () => {
         {
             id: 'order-processing',
             title: 'Story 3',
-<<<<<<< Updated upstream
             description: 'Story idea #3',
-=======
-            description: 'Complete e-commerce order flow with payment and shipping options',
->>>>>>> Stashed changes
             nodes: [
                 {
                     id: 'BROWSE',
