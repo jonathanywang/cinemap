@@ -15,6 +15,9 @@ const Sidebar: React.FC<SidebarProps> = ({ currentStoryId, onStorySelect }) => {
     const navigate = useNavigate(); // Add this hook
     const [message, setMessage] = useState('');
     const [isRecording, setIsRecording] = useState(false);
+    const [audioBlob, setAudioBlob] = useState<Blob | null>(null);
+    const [mediaRecorder, setMediaRecorder] = useState<MediaRecorder | null>(null);
+    const [audioStream, setAudioStream] = useState<MediaStream | null>(null);
     const { messages, sendMessage, isLoading } = useChat(currentStoryId);
     const messagesEndRef = useRef<HTMLDivElement>(null);
 
@@ -34,10 +37,97 @@ const Sidebar: React.FC<SidebarProps> = ({ currentStoryId, onStorySelect }) => {
         }
     };
 
-    const handleRecordClick = () => {
-        setIsRecording(!isRecording);
-        // TODO: Implement actual recording functionality
+    const handleRecordClick = async () => {
+        if (!isRecording) {
+            try {
+                // Request microphone access
+                const stream = await navigator.mediaDevices.getUserMedia({ 
+                    audio: {
+                        echoCancellation: true,
+                        noiseSuppression: true,
+                        sampleRate: 44100,
+                    } 
+                });
+                
+                setAudioStream(stream);
+                
+                // Create MediaRecorder instance
+                const recorder = new MediaRecorder(stream, {
+                    mimeType: 'audio/webm;codecs=opus' // Good compression and quality
+                });
+                
+                const audioChunks: BlobPart[] = [];
+                
+                // Collect audio data
+                recorder.ondataavailable = (event) => {
+                    if (event.data.size > 0) {
+                        audioChunks.push(event.data);
+                    }
+                };
+                
+                // Handle recording completion
+                recorder.onstop = () => {
+                    const audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
+                    setAudioBlob(audioBlob);
+                    
+                    // Stop all tracks to release microphone
+                    stream.getTracks().forEach(track => track.stop());
+                    setAudioStream(null);
+                    
+                    // TODO: Send audioBlob to your API
+                    console.log('Audio recorded, ready to send to API:', audioBlob);
+                    
+                    // Optional: Convert to different format or upload immediately
+                    // uploadAudioToAPI(audioBlob);
+                };
+                
+                // Start recording
+                recorder.start();
+                setMediaRecorder(recorder);
+                setIsRecording(true);
+                
+            } catch (error) {
+                console.error('Error accessing microphone:', error);
+                alert('Could not access microphone. Please check permissions.');
+            }
+        } else {
+            // Stop recording
+            if (mediaRecorder && mediaRecorder.state !== 'inactive') {
+                mediaRecorder.stop();
+                setMediaRecorder(null);
+                setIsRecording(false);
+            }
+        }
     };
+
+    // Function to upload audio to your API (implement as needed)
+    const uploadAudioToAPI = async (audioBlob: Blob) => {
+        const formData = new FormData();
+        formData.append('audio', audioBlob, 'recording.webm');
+        
+        try {
+            const response = await fetch('/api/upload-audio', {
+                method: 'POST',
+                body: formData,
+            });
+            
+            if (response.ok) {
+                const result = await response.json();
+                console.log('Audio uploaded successfully:', result);
+            }
+        } catch (error) {
+            console.error('Error uploading audio:', error);
+        }
+    };
+
+    // Cleanup on component unmount
+    useEffect(() => {
+        return () => {
+            if (audioStream) {
+                audioStream.getTracks().forEach(track => track.stop());
+            }
+        };
+    }, [audioStream]);
 
     // Mock stories data
     const stories = [
@@ -62,7 +152,7 @@ const Sidebar: React.FC<SidebarProps> = ({ currentStoryId, onStorySelect }) => {
 
             <div className="flex-1 flex flex-col">
                 {/* Record Button */}
-                <div className="flex justify-center py-4">
+                <div className="flex flex-col items-center py-4">
                     <button
                         onClick={handleRecordClick}
                         className={`
@@ -74,6 +164,7 @@ const Sidebar: React.FC<SidebarProps> = ({ currentStoryId, onStorySelect }) => {
                             }
                             shadow-lg hover:shadow-xl
                         `}
+                        title={isRecording ? 'Stop Recording' : 'Start Recording'}
                     >
                         <Mic 
                             className={`
@@ -83,6 +174,16 @@ const Sidebar: React.FC<SidebarProps> = ({ currentStoryId, onStorySelect }) => {
                             `}
                         />
                     </button>
+                    {isRecording && (
+                        <div className="mt-2 text-xs text-red-600 font-medium">
+                            Recording...
+                        </div>
+                    )}
+                    {audioBlob && !isRecording && (
+                        <div className="mt-2 text-xs text-green-600 font-medium">
+                            Audio ready to send
+                        </div>
+                    )}
                 </div>
 
                 {/* Chat Section */}
