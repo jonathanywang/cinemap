@@ -99,9 +99,108 @@ flowchart TD
 """
         return self.generate_mermaid(prompt)
 
-    def generate_mermaid_from_description(self, description):
-        """Generate Mermaid flowchart from a text description"""
-        prompt = f"""
+    def generate_mermaid_from_description(self, description, flowchart_type="main_story"):
+        """Generate a specific story variation flowchart based on type: main_story, alternative_1, alternative_2, or alternative_3"""
+
+        if flowchart_type == "main_story":
+            prompt = f"""
+Generate a Mermaid.js flowchart that represents the main story flow from this description:
+
+{description}
+
+Create a comprehensive flowchart that shows:
+1. The primary plot progression
+2. Key decision points and story beats
+3. The main climax and resolution
+4. The intended/canonical story path
+
+Focus on the primary storyline as originally conceived. Use proper Mermaid.js syntax starting with 'flowchart TD'.
+Return ONLY the Mermaid code without any explanation.
+
+Example format:
+flowchart TD
+    A[Opening Scene] --> B[Setup]
+    B --> C[Rising Action]
+    C --> D{{Critical Decision}}
+    D --Main Path--> E[Climax]
+    E --> F[Resolution]
+"""
+
+        elif flowchart_type == "alternative_1":
+            prompt = f"""
+Generate a Mermaid.js flowchart that represents an alternative story variation from this description:
+
+{description}
+
+Create a flowchart that shows:
+1. The same opening but with different choices made
+2. Alternative paths and consequences
+3. A different climax based on alternate decisions
+4. An alternative resolution/ending
+
+Focus on exploring "what if" scenarios and different story outcomes. Use proper Mermaid.js syntax starting with 'flowchart TD'.
+Return ONLY the Mermaid code without any explanation.
+
+Example format:
+flowchart TD
+    A[Opening Scene] --> B[Setup]
+    B --> C[Rising Action]
+    C --> D{{Critical Decision}}
+    D --Alternative Path--> G[Different Climax]
+    G --> H[Alternative Resolution]
+"""
+
+        elif flowchart_type == "alternative_2":
+            prompt = f"""
+Generate a Mermaid.js flowchart that represents a second alternative story variation from this description:
+
+{description}
+
+Create a flowchart that shows:
+1. The same premise but with major plot changes
+2. Different character motivations or obstacles
+3. A completely different middle section
+4. Another alternative ending possibility
+
+Focus on a significantly different story trajectory while maintaining the core premise. Use proper Mermaid.js syntax starting with 'flowchart TD'.
+Return ONLY the Mermaid code without any explanation.
+
+Example format:
+flowchart TD
+    A[Opening Scene] --> B[Setup]
+    B --> I[Different Conflict]
+    I --> J{{New Decision Point}}
+    J --Second Alternative--> K[Third Climax Option]
+    K --> L[Second Alternative Resolution]
+"""
+
+        elif flowchart_type == "alternative_3":
+            prompt = f"""
+Generate a Mermaid.js flowchart that represents a third alternative story variation from this description:
+
+{description}
+
+Create a flowchart that shows:
+1. The same starting point but with radical story changes
+2. Unexpected twists or genre shifts
+3. Subverted expectations from the original premise
+4. A completely different tone or outcome
+
+Focus on creative departures while staying true to the initial setup. Use proper Mermaid.js syntax starting with 'flowchart TD'.
+Return ONLY the Mermaid code without any explanation.
+
+Example format:
+flowchart TD
+    A[Opening Scene] --> B[Setup]
+    B --> M[Unexpected Turn]
+    M --> N{{Radical Choice}}
+    N --Wild Alternative--> O[Subversive Climax]
+    O --> P[Surprising Resolution]
+"""
+
+        else:
+            # Default to general flowchart generation
+            prompt = f"""
 Generate a Mermaid.js flowchart diagram with the following requirements:
 
 {description}
@@ -115,6 +214,7 @@ flowchart TD
     C -->|Yes| D[Option 1]
     C -->|No| E[Option 2]
 """
+
         return self.generate_mermaid(prompt)
 
     def generate_mermaid(self, prompt_text):
@@ -325,3 +425,4 @@ flowchart TD
             return data
         except Exception as e:
             raise Exception(f"Failed to generate story flowchart: {e}")
+

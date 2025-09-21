@@ -115,6 +115,37 @@ const MainApp: React.FC = () => {
         setSelectedNode(null); // Clear selected node when switching flowcharts
     };
 
+    const handleCreateNewFlowchart = () => {
+        const newFlowchartId = `flowchart-${Date.now()}`;
+        const newFlowchart: Flowchart = {
+            id: newFlowchartId,
+            title: `Flowchart ${flowcharts.length + 1}`,
+            description: 'New flowchart ready for import',
+            nodes: [],
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString()
+        };
+
+        setFlowcharts([...flowcharts, newFlowchart]);
+        setActiveFlowchartId(newFlowchartId);
+        setSelectedNode(null);
+    };
+
+    const handleDeleteFlowchart = (flowchartId: string) => {
+        if (flowcharts.length <= 1) return; // Don't delete if it's the last one
+
+        if (window.confirm('Are you sure you want to delete this flowchart?')) {
+            const updatedFlowcharts = flowcharts.filter(f => f.id !== flowchartId);
+            setFlowcharts(updatedFlowcharts);
+
+            // If we deleted the active flowchart, switch to the first one
+            if (activeFlowchartId === flowchartId) {
+                setActiveFlowchartId(updatedFlowcharts[0].id);
+            }
+            setSelectedNode(null);
+        }
+    };
+
     const toggleCharacterSection = () => {
         setIsCharacterSectionOpen(!isCharacterSectionOpen);
     };
@@ -709,8 +740,20 @@ const MainApp: React.FC = () => {
         // Update the current flowchart with imported nodes
         const updatedFlowcharts = flowcharts.map(flowchart => {
             if (flowchart.id === activeFlowchartId) {
+                // Update title if it's still the default
+                let newTitle = flowchart.title;
+                if (flowchart.title.startsWith('Flowchart ') && importedNodes.length > 0) {
+                    // Use the first node's title as a hint for the flowchart name
+                    const firstNode = importedNodes[0];
+                    newTitle = firstNode.title.length > 20
+                        ? firstNode.title.substring(0, 20) + '...'
+                        : firstNode.title;
+                }
+
                 return {
                     ...flowchart,
+                    title: newTitle,
+                    description: `Imported flowchart with ${importedNodes.length} nodes`,
                     nodes: importedNodes,
                     updated_at: new Date().toISOString()
                 };
@@ -773,20 +816,39 @@ const MainApp: React.FC = () => {
                     {/* Flowchart Tabs */}
                     <div className="bg-white border-b border-gray-200">
                         <div className="flex items-center justify-between px-6 py-4">
-                            <div className="flex space-x-1">
+                            <div className="flex items-center space-x-1">
                                 {flowcharts.map((flowchart) => (
-                                    <button
-                                        key={flowchart.id}
-                                        onClick={() => handleFlowchartChange(flowchart.id)}
-                                        className={`px-4 py-2 text-sm font-medium rounded-lg transition-colors duration-200 ${
-                                            activeFlowchartId === flowchart.id
-                                                ? 'bg-blue-100 text-blue-700 border border-blue-200'
-                                                : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
-                                        }`}
-                                    >
-                                        {flowchart.title}
-                                    </button>
+                                    <div key={flowchart.id} className="flex items-center group">
+                                        <button
+                                            onClick={() => handleFlowchartChange(flowchart.id)}
+                                            className={`px-4 py-2 text-sm font-medium rounded-lg transition-colors duration-200 ${
+                                                activeFlowchartId === flowchart.id
+                                                    ? 'bg-blue-100 text-blue-700 border border-blue-200'
+                                                    : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
+                                            }`}
+                                        >
+                                            {flowchart.title}
+                                        </button>
+                                        {flowcharts.length > 1 && (
+                                            <button
+                                                onClick={() => handleDeleteFlowchart(flowchart.id)}
+                                                className="ml-1 p-1 text-gray-400 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity duration-200"
+                                                title="Delete flowchart"
+                                            >
+                                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                                                </svg>
+                                            </button>
+                                        )}
+                                    </div>
                                 ))}
+                                <button
+                                    onClick={handleCreateNewFlowchart}
+                                    className="px-3 py-2 text-sm font-medium text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors duration-200 border border-dashed border-gray-300"
+                                    title="Create new flowchart"
+                                >
+                                    + New
+                                </button>
                             </div>
                             {currentFlowchart && (
                                 <div className="text-sm text-gray-500">

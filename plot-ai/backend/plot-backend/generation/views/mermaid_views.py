@@ -54,6 +54,7 @@ def generate_mermaid_from_description(request):
     """
     try:
         description = request.data.get('description', '')
+        flowchart_type = request.data.get('flowchart_type', 'main_story')
 
         if not description:
             return Response(
@@ -61,17 +62,26 @@ def generate_mermaid_from_description(request):
                 status=status.HTTP_400_BAD_REQUEST
             )
 
+        # Validate flowchart_type
+        valid_types = ['main_story', 'alternative_1', 'alternative_2', 'alternative_3']
+        if flowchart_type not in valid_types:
+            return Response(
+                {'success': False, 'error': f'flowchart_type must be one of: {valid_types}'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
         # Initialize Mermaid service
         mermaid_service = MermaidService()
 
-        # Generate Mermaid code
-        mermaid_code = mermaid_service.generate_mermaid_from_description(description)
+        # Generate specific flowchart based on type
+        mermaid_code = mermaid_service.generate_mermaid_from_description(description, flowchart_type)
 
         return Response({
             'success': True,
             'description': description,
+            'flowchart_type': flowchart_type,
             'mermaid_code': mermaid_code,
-            'message': 'Mermaid flowchart generated successfully'
+            'message': f'Mermaid flowchart generated successfully for {flowchart_type}'
         })
 
     except Exception as e:
@@ -131,6 +141,105 @@ def generate_mermaid_svg(request):
             {'success': False, 'error': 'Story not found'},
             status=status.HTTP_404_NOT_FOUND
         )
+    except Exception as e:
+        return Response(
+            {'success': False, 'error': str(e)},
+            status=status.HTTP_500_INTERNAL_SERVER_ERROR
+        )
+
+@api_view(['POST'])
+@permission_classes([permissions.IsAuthenticated])
+def generate_four_flowcharts(request):
+    """
+    Generate four predefined story flowcharts (main story + 3 character perspectives)
+    """
+    try:
+        # Define the four flowcharts
+        flowcharts = {
+            'main_story': {
+                'title': 'Main Story Flow',
+                'mermaid_code': '''flowchart TD
+    A[Opening Scene] --> B[Introduce Character A]
+    B --> C[Introduce Character B]
+    C --> D[Introduce Character C]
+    D --> E{Paths Cross?}
+    E --Yes--> F[Shared Challenge 1: Heist]
+    F --> G{A's Courage Tested?}
+    G --Success--> H[Confrontation: Escape]
+    G --Fails--> I[Captured] --> J[Closing Scene - Prison]
+    H --> K{B's Intellect Crucial?}
+    K --Success--> L[Successful Escape]
+    K --Fails--> M[Captured] --> J
+    L --> N{C's Empathy Influences?}
+    N --Helps Others--> O[Closing Scene - Freedom]
+    N --Self-Preservation--> P[Closing Scene - Alone]
+    E --No--> Q[A's Ambitious Plan]
+    Q --> R[B's Intellectual Pursuit]
+    R --> S[C's Empathetic Mission]
+    S --> T{Paths Converge?}
+    T --Yes--> F
+    T --No--> U[Separate Endings] --> V[Closing Scene - Divergent Paths]'''
+            },
+            'character_a': {
+                'title': 'Character A Journey',
+                'mermaid_code': '''flowchart TD
+    A[Opening Scene] --> B[Introduce Character A]
+    B --> Q[A's Ambitious Plan]
+    Q --> T{Paths Converge?}
+    T --Yes--> F[Shared Challenge 1: Heist]
+    F --> G{A's Courage Tested?}
+    G --Success--> H[Confrontation: Escape]
+    G --Fails--> I[Captured] --> J[Closing Scene - Prison]
+    H --> K{B's Intellect Crucial?}
+    K --Success--> L[Successful Escape]
+    K --Fails--> M[Captured] --> J
+    L --> N{C's Empathy Influences?}
+    N --Helps Others--> O[Closing Scene - Freedom]
+    N --Self-Preservation--> P[Closing Scene - Alone]
+    T --No--> U[Separate Endings] --> V[Closing Scene - Divergent Paths]'''
+            },
+            'character_b': {
+                'title': 'Character B Journey',
+                'mermaid_code': '''flowchart TD
+    A[Opening Scene] --> C[Introduce Character B]
+    C --> R[B's Intellectual Pursuit]
+    R --> T{Paths Converge?}
+    T --Yes--> F[Shared Challenge 1: Heist]
+    F --> G{A's Courage Tested?}
+    G --Success--> H[Confrontation: Escape]
+    H --> K{B's Intellect Crucial?}
+    K --Success--> L[Successful Escape]
+    K --Fails--> M[Captured] --> J[Closing Scene - Prison]
+    L --> N{C's Empathy Influences?}
+    N --Helps Others--> O[Closing Scene - Freedom]
+    N --Self-Preservation--> P[Closing Scene - Alone]
+    T --No--> U[Separate Endings] --> V[Closing Scene - Divergent Paths]'''
+            },
+            'character_c': {
+                'title': 'Character C Journey',
+                'mermaid_code': '''flowchart TD
+    A[Opening Scene] --> D[Introduce Character C]
+    D --> S[C's Empathetic Mission]
+    S --> T{Paths Converge?}
+    T --Yes--> F[Shared Challenge 1: Heist]
+    F --> G{A's Courage Tested?}
+    G --Success--> H[Confrontation: Escape]
+    H --> K{B's Intellect Crucial?}
+    K --Success--> L[Successful Escape]
+    L --> N{C's Empathy Influences?}
+    N --Helps Others--> O[Closing Scene - Freedom]
+    N --Self-Preservation--> P[Closing Scene - Alone]
+    T --No--> U[Separate Endings] --> V[Closing Scene - Divergent Paths]'''
+            }
+        }
+
+        return Response({
+            'success': True,
+            'flowcharts': flowcharts,
+            'count': len(flowcharts),
+            'message': 'Four flowcharts generated successfully'
+        })
+
     except Exception as e:
         return Response(
             {'success': False, 'error': str(e)},
