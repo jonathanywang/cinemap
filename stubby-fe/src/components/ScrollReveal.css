@@ -1,0 +1,23 @@
+.scroll-reveal {
+    margin: 20px 0;
+}
+
+.scroll-reveal-text {
+    font-size: clamp(1.6rem, 4vw, 3rem);
+    line-height: 1.5;
+    font-weight: 600;
+}
+
+.word {
+    display: inline-block;
+}
+
+/* Inheritance override: apply this class along with scroll-reveal-text
+   when you want to keep existing Tailwind / parent typography exactly */
+.scroll-reveal-text.sr-inherit {
+    font-size: inherit;
+    line-height: inherit;
+    font-weight: inherit;
+    color: inherit;
+    letter-spacing: inherit;
+}

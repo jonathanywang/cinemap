@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Debug Test</title>
+</head>
+<body>
+    <h1>JavaScript Debug Test</h1>
+    <button onclick="testBasic()">Test Basic Function</button>
+    <button onclick="testAPI()">Test API Call</button>
+    <div id="result"></div>
+
+    <script>
+        console.log('Script loaded');
+
+        function testBasic() {
+            console.log('testBasic called');
+            document.getElementById('result').innerHTML = 'Basic function works!';
+        }
+
+        async function testAPI() {
+            console.log('testAPI called');
+            try {
+                const response = await fetch('/api/test/multi-flowcharts/', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        description: 'test',
+                        character_names: ['Hero']
+                    })
+                });
+
+                const data = await response.json();
+                document.getElementById('result').innerHTML = 'API call works! Got: ' + data.total_flowcharts + ' flowcharts';
+            } catch (error) {
+                document.getElementById('result').innerHTML = 'API call failed: ' + error.message;
+            }
+        }
+
+        console.log('Script end');
+    </script>
+</body>
+</html>

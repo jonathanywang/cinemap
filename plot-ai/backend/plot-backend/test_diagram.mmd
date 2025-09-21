@@ -1,0 +1,7 @@
+graph TD
+    A[User visits registration page] --> B{User fills out form};
+    B --> C{System validates data};
+    C -- Valid --> D[Create account];
+    D --> E[Redirect to dashboard];
+    C -- Invalid --> F[Show errors];
+    F --> B;
