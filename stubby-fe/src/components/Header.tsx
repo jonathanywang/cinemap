@@ -61,13 +61,6 @@ const Header: React.FC<HeaderProps> = ({ variant = 'app' }) => {
                                 Our Mission
                             </button>
                             
-                            <button
-                                onClick={() => scrollToSection('join-storyflow')}
-                                className="text-white hover:text-gray-300 font-medium text-sm transition-colors duration-200"
-                            >
-                                Get Started
-                            </button>
-                            
                             <div className="w-px h-4 bg-gray-600" />
                             
                             <button
