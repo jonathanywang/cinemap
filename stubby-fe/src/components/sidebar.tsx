@@ -4,14 +4,16 @@ import { useChat } from '../hooks';
 import { Button } from './ui/button';
 import { Plus, FileText, Mic } from 'lucide-react';
 import Logo from './Logo'; // Import the Logo component
-import type { AudioTranscriptionResponse } from '../types';
+import type { AudioTranscriptionResponse, StoryNode } from '../types';
+import { parseMermaidFlowchart, convertMermaidToStoryNodes, extractFirstMermaidDiagram } from '../utils/mermaid';
 
 interface SidebarProps {
     currentStoryId: string | null;
     onStorySelect: (storyId: string) => void;
+    onMermaidGenerated?: (nodes: StoryNode[]) => void;
 }
 
-const Sidebar: React.FC<SidebarProps> = ({ currentStoryId, onStorySelect }) => {
+const Sidebar: React.FC<SidebarProps> = ({ currentStoryId, onStorySelect, onMermaidGenerated }) => {
     const defaultApiBase = typeof window !== 'undefined' && window.location.port === '3000'
         ? 'http://127.0.0.1:8000'
         : '';
@@ -83,6 +85,26 @@ const Sidebar: React.FC<SidebarProps> = ({ currentStoryId, onStorySelect }) => {
             }
 
             addExchange(transcript, aiResponse);
+
+            if (onMermaidGenerated) {
+                const diagramSource = extractFirstMermaidDiagram(aiResponse);
+                if (diagramSource) {
+                    try {
+                        const mermaidResult = parseMermaidFlowchart(diagramSource);
+                        const storyNodesFromMermaid = convertMermaidToStoryNodes(mermaidResult);
+                        if (storyNodesFromMermaid.length === 0) {
+                            setAudioError('Generated Mermaid diagram was empty.');
+                        } else {
+                            onMermaidGenerated(storyNodesFromMermaid);
+                        }
+                    } catch (mermaidError) {
+                        console.error('Failed to process generated Mermaid diagram:', mermaidError);
+                        setAudioError('Could not interpret the generated Mermaid diagram.');
+                    }
+                } else {
+                    setAudioError('No Mermaid diagram detected in AI response.');
+                }
+            }
             setAudioBlob(null);
         } catch (error) {
             console.error('Error uploading audio:', error);
@@ -93,7 +115,7 @@ const Sidebar: React.FC<SidebarProps> = ({ currentStoryId, onStorySelect }) => {
         } finally {
             setIsProcessingAudio(false);
         }
-    }, [addExchange, currentStoryId, audioTranscriptionUrl]);
+    }, [addExchange, currentStoryId, audioTranscriptionUrl, onMermaidGenerated]);
 
     const handleRecordClick = async () => {
         if (isRecording) {

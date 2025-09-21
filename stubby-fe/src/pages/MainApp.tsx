@@ -725,7 +725,6 @@ const MainApp: React.FC = () => {
         setSelectedNode(null);
 
         console.log('Imported nodes:', importedNodes);
-        alert(`Successfully imported ${importedNodes.length} nodes from Mermaid flowchart!`);
     };
 
     // Handle node changes
@@ -764,6 +763,7 @@ const MainApp: React.FC = () => {
             <Sidebar 
                 currentStoryId={selectedStory?.id || null}
                 onStorySelect={handleStorySelect}
+                onMermaidGenerated={handleMermaidImport}
             />
 
             {/* Main Content Area */}
