@@ -621,12 +621,12 @@ const Sidebar: React.FC<SidebarProps> = ({
 
             <div className="flex-1 flex flex-col">
                 {/* Record Button */}
-                <div className="flex flex-col items-center py-4">
+                <div className="flex flex-col items-center py-8 mt-4">
                     <button
                         onClick={handleRecordClick}
                         disabled={disableRecordButton}
                         className={`
-                            w-12 h-12 rounded-full flex items-center justify-center
+                            w-16 h-16 rounded-full flex items-center justify-center
                             transition-all duration-200 ease-in-out
                             ${isRecording
                                 ? 'bg-red-600 hover:bg-red-700 scale-110'
@@ -648,7 +648,7 @@ const Sidebar: React.FC<SidebarProps> = ({
                     >
                         <Mic 
                             className={`
-                                h-6 w-6 text-white
+                                h-8 w-8 text-white
                                 transition-transform duration-200
                                 ${isRecording ? 'scale-110' : ''}
                             `}
