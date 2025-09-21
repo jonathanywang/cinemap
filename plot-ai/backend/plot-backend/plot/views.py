@@ -12,8 +12,8 @@ from django.utils.decorators import method_decorator
 from django.views.decorators.csrf import csrf_exempt
 
 from dotenv import load_dotenv
-from google import genai
-from google.genai import types as genai_types
+import google.generativeai as genai
+from google.generativeai import types as genai_types
 from pydub import AudioSegment
 from rest_framework import status
 from rest_framework.authtoken.models import Token
