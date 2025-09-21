@@ -1,9 +1,8 @@
-import React, { useState, useRef, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom'; // Add this import
 import { useChat } from '../hooks';
 import { Button } from './ui/button';
-import { Input } from './ui/input';
-import { MessageCircle, Send, Plus, FileText, Mic } from 'lucide-react';
+import { Plus, FileText, Mic } from 'lucide-react';
 import Logo from './Logo'; // Import the Logo component
 import type { AudioTranscriptionResponse } from '../types';
 
@@ -21,32 +20,14 @@ const Sidebar: React.FC<SidebarProps> = ({ currentStoryId, onStorySelect }) => {
         ? `${apiBaseUrl}/api/audio/transcribe/`
         : '/api/audio/transcribe/';
     const navigate = useNavigate(); // Add this hook
-    const [message, setMessage] = useState('');
     const [isRecording, setIsRecording] = useState(false);
     const [audioBlob, setAudioBlob] = useState<Blob | null>(null);
     const [mediaRecorder, setMediaRecorder] = useState<MediaRecorder | null>(null);
     const [audioStream, setAudioStream] = useState<MediaStream | null>(null);
-    const { messages, sendMessage, isLoading, addExchange } = useChat(currentStoryId);
-    const messagesEndRef = useRef<HTMLDivElement>(null);
+    const { addExchange } = useChat(currentStoryId);
     const [isProcessingAudio, setIsProcessingAudio] = useState(false);
     const [audioError, setAudioError] = useState<string | null>(null);
     const disableRecordButton = !isRecording && (!currentStoryId || isProcessingAudio);
-
-    const scrollToBottom = () => {
-        messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-    };
-
-    useEffect(() => {
-        scrollToBottom();
-    }, [messages]); // Scroll whenever messages change
-
-    const handleSubmit = async (e: React.FormEvent) => {
-        e.preventDefault();
-        if (message.trim() && currentStoryId) {
-            await sendMessage(message);
-            setMessage('');
-        }
-    };
 
     const uploadAudioToAPI = useCallback(async (audioBlob: Blob) => {
         if (!currentStoryId) {
@@ -290,67 +271,6 @@ const Sidebar: React.FC<SidebarProps> = ({ currentStoryId, onStorySelect }) => {
                             Select a project to enable recording.
                         </div>
                     )}
-                </div>
-
-                {/* Chat Section */}
-                <div className="p-4 flex flex-col">
-                    <div className="flex items-center gap-2 mb-4">
-                        <MessageCircle className="h-4 w-4 text-sidebar-foreground/60" />
-                        <h3 className="text-sm font-semibold text-sidebar-foreground">AI Assistant</h3>
-                    </div>
-
-                    {/* Chat Messages */}
-                    <div className="mb-4 border border-sidebar-border rounded-lg bg-background">
-                        <div className="p-3 h-40 overflow-y-auto">
-                            {messages.length === 0 ? (
-                                <div className="flex items-center justify-center h-full">
-                                    <p className="text-sm text-sidebar-foreground/60 text-center">
-                                        Start a conversation with your AI writing assistant...
-                                    </p>
-                                </div>
-                            ) : (
-                                <div className="space-y-4">
-                                    {messages.map((msg) => (
-                                        <div key={msg.id} className="space-y-2">
-                                            <div className="bg-primary/10 rounded-lg p-2">
-                                                <div className="text-xs text-primary font-medium mb-1">
-                                                    You
-                                                </div>
-                                                <div className="text-sm text-sidebar-foreground">{msg.user_message}</div>
-                                            </div>
-                                            <div className="bg-sidebar-accent rounded-lg p-2">
-                                                <div className="text-xs text-sidebar-foreground/70 font-medium mb-1">
-                                                    AI Assistant
-                                                </div>
-                                                <div className="text-sm text-sidebar-accent-foreground">{msg.ai_response}</div>
-                                            </div>
-                                        </div>
-                                    ))}
-                                    {/* Invisible element to scroll to */}
-                                    <div ref={messagesEndRef} />
-                                </div>
-                            )}
-                        </div>
-                    </div>
-
-                    {/* Chat Input */}
-                    <form onSubmit={handleSubmit} className="flex gap-2">
-                        <Input
-                            value={message}
-                            onChange={(e) => setMessage(e.target.value)}
-                            placeholder="Ask your AI assistant..."
-                            disabled={isLoading || !currentStoryId}
-                            className="flex-1 bg-background border-sidebar-border focus:ring-sidebar-ring"
-                        />
-                        <Button
-                            type="submit"
-                            disabled={isLoading || !message.trim() || !currentStoryId}
-                            size="sm"
-                            className="px-3"
-                        >
-                            <Send className="h-4 w-4" />
-                        </Button>
-                    </form>
                 </div>
 
                 {/* Flexible space */}
