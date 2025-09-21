@@ -1,17 +1,4 @@
 {
-    "projects": [
-      {
-        "src": "stubby-fe/package.json",
-        "use": "@vercel/static-build",
-        "config": {
-          "distDir": "build"
-        }
-      },
-      {
-        "src": "plot-ai/backend/plot-backend/**/*.py",
-        "use": "@vercel/node"
-      }
-    ],
     "rewrites": [
       { "source": "/(.*)", "destination": "/frontend/$1" }
     ]
