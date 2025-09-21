@@ -16,6 +16,22 @@ const Header: React.FC<HeaderProps> = ({ variant = 'app' }) => {
         }
     };
 
+    const handleLogoClick = () => {
+        if (variant === 'landing') {
+            // Check if already at the top of the page
+            if (window.scrollY === 0) {
+                // If at top, navigate to home
+                navigate('/');
+            } else {
+                // If not at top, scroll to top
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+            }
+        } else {
+            // On other pages, navigate to landing page
+            navigate('/');
+        }
+    };
+
     return (
         <header className="fixed top-0 left-0 right-0 z-50">
             <div className="flex items-center justify-center pt-4">
@@ -23,7 +39,7 @@ const Header: React.FC<HeaderProps> = ({ variant = 'app' }) => {
                     {/* Logo */}
                     <div 
                         className="cursor-pointer hover:opacity-90 transition-opacity"
-                        onClick={() => navigate('/')}
+                        onClick={handleLogoClick}
                     >
                         <Logo className="text-white hover:text-gray-200 w-[100px]" />
                     </div>
