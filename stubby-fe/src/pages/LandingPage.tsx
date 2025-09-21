@@ -60,7 +60,7 @@ const LandingPage: React.FC = () => {
                                 <SplitText
                                     text="From stories to branching plots to cinematic arcs, Stubby refines and accelerates your creative process."
                                     tag="p"
-                                    className="text-xl text-gray-200 mb-10 leading-relaxed max-w-xl drop-shadow-[0_2px_6px_rgba(0,0,0,0.6)]"
+                                    className="text-2xl font-medium text-blue-100 mb-10 leading-relaxed max-w-xl drop-shadow-[0_3px_8px_rgba(0,0,0,0.8)] tracking-wide"
                                     delay={30}
                                     duration={0.6}
                                     ease="power2.out"
@@ -104,7 +104,7 @@ const LandingPage: React.FC = () => {
                                         </div>
 
                                         {/* Elegant connection arrow 1 */}
-                                        <div className="flex items-center justify-center flex-shrink-0 group/arrow px-2">
+                                        <div className="flex items-center justify-center flex-shrink-0 group/arrow px-2 mt-12">
                                             <div className="relative">
                                                 <div className="h-0.5 w-10 bg-gradient-to-r from-slate-400 to-slate-300 group-hover/arrow:from-white group-hover/arrow:to-slate-100 transition-all duration-300 rounded-full shadow-sm"></div>
                                                 <div className="absolute right-0 top-1/2 transform -translate-y-1/2 w-0 h-0 border-l-[6px] border-l-slate-300 border-t-[3px] border-t-transparent border-b-[3px] border-b-transparent group-hover/arrow:border-l-white transition-colors duration-300"></div>
@@ -135,7 +135,7 @@ const LandingPage: React.FC = () => {
                                         </div>
 
                                         {/* Elegant connection arrow 2 */}
-                                        <div className="flex items-center justify-center flex-shrink-0 group/arrow px-2">
+                                        <div className="flex items-center justify-center flex-shrink-0 group/arrow px-2 mt-12">
                                             <div className="relative">
                                                 <div className="h-0.5 w-10 bg-gradient-to-r from-slate-400 to-slate-300 group-hover/arrow:from-white group-hover/arrow:to-slate-100 transition-all duration-300 rounded-full shadow-sm"></div>
                                                 <div className="absolute right-0 top-1/2 transform -translate-y-1/2 w-0 h-0 border-l-[6px] border-l-slate-300 border-t-[3px] border-t-transparent border-b-[3px] border-b-transparent group-hover/arrow:border-l-white transition-colors duration-300"></div>
@@ -353,7 +353,7 @@ const LandingPage: React.FC = () => {
                 {/* Background flowcharts outside container */}
                 <div className="absolute inset-0 pointer-events-none opacity-20">
                     {/* Top Left Flowchart - Story Development Process */}
-                    <div className="absolute top-0 left-60 w-56 h-64">
+                    <div className="absolute top-0 left-52 w-56 h-64">
                         <div className="bg-blue-500 text-white text-xs px-3 py-2 rounded-lg shadow-md mb-2 text-center font-medium">
                             Story Idea
                         </div>
@@ -376,7 +376,7 @@ const LandingPage: React.FC = () => {
                     </div>
 
                     {/* Top Right Process Diagram */}
-                    <div className="absolute top-40 right-96 w-64 h-48">
+                    <div className="absolute top-20 right-96 w-64 h-48">
                         <div className="grid grid-cols-3 gap-3 h-full">
                             <div className="flex flex-col space-y-2">
                                 <div className="bg-indigo-500 text-white text-xs px-2 py-2 rounded-lg shadow-md text-center font-medium h-12 flex items-center justify-center">
@@ -403,7 +403,7 @@ const LandingPage: React.FC = () => {
                     </div>
 
                     {/* Bottom Left Branching Diagram */}
-                    <div className="absolute bottom-12 left-72 w-72 h-52">
+                    <div className="absolute bottom-16 left-80 w-72 h-52">
                         <div className="bg-orange-500 text-white text-xs px-3 py-2 rounded-lg shadow-md text-center font-medium mb-3 w-28 mx-auto">
                             Story Branch Point
                         </div>
@@ -442,7 +442,7 @@ const LandingPage: React.FC = () => {
                     </div>
 
                     {/* Bottom Right Decision Tree */}
-                    <div className="absolute bottom-8 right-60 w-56 h-60">
+                    <div className="absolute bottom-8 right-52 w-56 h-60">
                         <div className="bg-violet-500 text-white text-xs px-3 py-2 rounded-lg shadow-md text-center font-medium mb-3">
                             Character Action
                         </div>
@@ -477,6 +477,28 @@ const LandingPage: React.FC = () => {
 
                 <div className="w-full max-w-6xl mx-auto relative z-10">
                     <div className="relative rounded-3xl px-12 pt-10 pb-16 md:px-16 md:pt-12 md:pb-20 lg:px-24 lg:pt-14 lg:pb-28 overflow-hidden before:content-[''] before:absolute before:inset-[4px] before:rounded-[1.25rem] before:border before:border-white/15 before:pointer-events-none before:z-10">
+
+                        {/* Custom black border segments that cut off near flowcharts */}
+                        {/* Top border - full width */}
+                        <div className="absolute top-4 left-4 right-4 h-0.5 bg-black/80 rounded-full z-30"></div>
+
+                        {/* Bottom border - full width */}
+                        <div className="absolute bottom-4 left-4 right-4 h-0.5 bg-black/80 rounded-full z-30"></div>
+
+                        {/* Left border segments - cut off where flowcharts appear */}
+                        <div className="absolute top-4 left-4 w-0.5 h-32 bg-black/80 rounded-full z-30"></div>
+                        <div className="absolute bottom-4 left-4 w-0.5 h-32 bg-black/80 rounded-full z-30"></div>
+
+                        {/* Right border segments - cut off where flowcharts appear */}
+                        <div className="absolute top-4 right-4 w-0.5 h-40 bg-black/80 rounded-full z-30"></div>
+                        <div className="absolute bottom-4 right-4 w-0.5 h-24 bg-black/80 rounded-full z-30"></div>
+
+                        {/* Corner connectors */}
+                        <div className="absolute top-4 left-4 w-2 h-2 border-l-0.5 border-t-0.5 border-black/80 rounded-tl-sm z-30"></div>
+                        <div className="absolute top-4 right-4 w-2 h-2 border-r-0.5 border-t-0.5 border-black/80 rounded-tr-sm z-30"></div>
+                        <div className="absolute bottom-4 left-4 w-2 h-2 border-l-0.5 border-b-0.5 border-black/80 rounded-bl-sm z-30"></div>
+                        <div className="absolute bottom-4 right-4 w-2 h-2 border-r-0.5 border-b-0.5 border-black/80 rounded-br-sm z-30"></div>
+
                         <div className="max-w-5xl mx-auto text-center relative z-20">
                             <div className="mb-12">
                                 <BlurText
@@ -484,7 +506,7 @@ const LandingPage: React.FC = () => {
                                     delay={90}
                                     animateBy="words"
                                     direction="top"
-                                    className="text-5xl md:text-6xl font-bold leading-tight text-gray-900 tracking-tight text-center"
+                                    className="text-4xl md:text-5xl font-black leading-tight text-slate-800 tracking-tight text-center"
                                 />
                             </div>
                             <div className="space-y-12 text-2xl md:text-2xl text-gray-600 text-center">
@@ -493,7 +515,7 @@ const LandingPage: React.FC = () => {
                                     delay={90}
                                     animateBy="words"
                                     direction="top"
-                                    className="text-2xl md:text-2xl text-gray-600 leading-loose text-center"
+                                    className="text-xl md:text-2xl font-medium text-slate-700 leading-relaxed text-center tracking-wide"
                                 />
                             </div>
                         </div>
@@ -516,7 +538,7 @@ const LandingPage: React.FC = () => {
                     <div className="max-w-4xl mx-auto px-6 w-full relative z-10 h-full flex flex-col justify-center">
                         <div className="mb-12">
                             <ScrollReveal
-                                textClassName="text-4xl md:text-5xl font-bold text-white tracking-tight text-center drop-shadow-[0_2px_8px_rgba(0,0,0,0.65)]"
+                                textClassName="text-3xl md:text-4xl font-black text-blue-50 tracking-tight text-center drop-shadow-[0_3px_8px_rgba(0,0,0,0.8)]"
                                 containerClassName="mb-10"
                                 baseOpacity={0.15}
                                 baseRotation={4}
@@ -528,89 +550,28 @@ const LandingPage: React.FC = () => {
                             </ScrollReveal>
                             <div className="space-y-10 text-xl text-gray-200 mb-12">
                                 <ScrollReveal
-                                    textClassName="sr-inherit text-xl text-gray-200 leading-relaxed text-center drop-shadow-[0_2px_6px_rgba(0,0,0,0.55)]"
-                                    containerClassName="leading-relaxed"
+                                    textClassName="sr-inherit text-lg font-light text-blue-50 leading-loose text-left drop-shadow-[0_3px_8px_rgba(0,0,0,0.7)] tracking-wide"
+                                    containerClassName="leading-loose"
                                     baseOpacity={0.1}
                                     baseRotation={2}
                                     blurStrength={4}
                                     rotationEnd="+=220"
                                     wordAnimationEnd="+=220"
                                 >
-                                    We believe that everyone has a story to tell. Our mission is to make the writing process more intuitive and accessible through visual storytelling and AI assistance.
-                                </ScrollReveal>
-                            </div>
-                        </div>
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-10 md:gap-12">
-                            <div className="text-center space-y-3">
-                                <ScrollReveal
-                                    textClassName="sr-inherit text-2xl font-semibold text-white drop-shadow-[0_2px_6px_rgba(0,0,0,0.55)]"
-                                    containerClassName=""
-                                    baseOpacity={0.1}
-                                    baseRotation={3}
-                                    blurStrength={5}
-                                    rotationEnd="+=180"
-                                    wordAnimationEnd="+=180"
-                                >
-                                    Visualize
+                                    Everyone has a story to tell. StoryFlow is built to make the writing process more intuitive and
+                                    accessible through visual storytelling and AI assistance.
                                 </ScrollReveal>
                                 <ScrollReveal
-                                    textClassName="sr-inherit text-gray-200 drop-shadow-[0_1px_4px_rgba(0,0,0,0.5)]"
-                                    containerClassName=""
+                                    textClassName="sr-inherit text-lg font-light text-blue-50 leading-loose text-left drop-shadow-[0_3px_8px_rgba(0,0,0,0.7)] tracking-wide"
+                                    containerClassName="leading-loose"
                                     baseOpacity={0.1}
                                     baseRotation={2}
                                     blurStrength={4}
-                                    rotationEnd="+=160"
-                                    wordAnimationEnd="+=160"
+                                    rotationEnd="+=220"
+                                    wordAnimationEnd="+=220"
                                 >
-                                    See your story structure come to life with interactive flowcharts
-                                </ScrollReveal>
-                            </div>
-                            <div className="text-center space-y-3">
-                                <ScrollReveal
-                                    textClassName="sr-inherit text-2xl font-semibold text-white drop-shadow-[0_2px_6px_rgba(0,0,0,0.55)]"
-                                    containerClassName=""
-                                    baseOpacity={0.1}
-                                    baseRotation={3}
-                                    blurStrength={5}
-                                    rotationEnd="+=180"
-                                    wordAnimationEnd="+=180"
-                                >
-                                    Create
-                                </ScrollReveal>
-                                <ScrollReveal
-                                    textClassName="sr-inherit text-gray-200 drop-shadow-[0_1px_4px_rgba(0,0,0,0.5)]"
-                                    containerClassName=""
-                                    baseOpacity={0.1}
-                                    baseRotation={2}
-                                    blurStrength={4}
-                                    rotationEnd="+=160"
-                                    wordAnimationEnd="+=160"
-                                >
-                                    Craft compelling narratives with AI-powered assistance
-                                </ScrollReveal>
-                            </div>
-                            <div className="text-center space-y-3">
-                                <ScrollReveal
-                                    textClassName="sr-inherit text-2xl font-semibold text-white drop-shadow-[0_2px_6px_rgba(0,0,0,0.55)]"
-                                    containerClassName=""
-                                    baseOpacity={0.1}
-                                    baseRotation={3}
-                                    blurStrength={5}
-                                    rotationEnd="+=180"
-                                    wordAnimationEnd="+=180"
-                                >
-                                    Share
-                                </ScrollReveal>
-                                <ScrollReveal
-                                    textClassName="sr-inherit text-gray-200 drop-shadow-[0_1px_4px_rgba(0,0,0,0.5)]"
-                                    containerClassName=""
-                                    baseOpacity={0.1}
-                                    baseRotation={2}
-                                    blurStrength={4}
-                                    rotationEnd="+=160"
-                                    wordAnimationEnd="+=160"
-                                >
-                                    Export and share your stories in multiple formats
+                                    Whether you’re a professional facing writer’s block or an indie creator shaping your first draft, our goal is to help you move past
+                                    creative roadblocks, organize your ideas, and accelerate the journey from concept to finished narrative.
                                 </ScrollReveal>
                             </div>
                         </div>
