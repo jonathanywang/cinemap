@@ -19,7 +19,7 @@ const MainApp: React.FC = () => {
     const [selectedStory, setSelectedStory] = useState<Story | null>(null);
     const [selectedNode, setSelectedNode] = useState<StoryNode | null>(null);
     const [isCharacterSectionOpen, setIsCharacterSectionOpen] = useState(true);
-    const [activeFlowchartId, setActiveFlowchartId] = useState<string>('customer-support');
+    const [activeFlowchartId, setActiveFlowchartId] = useState<string>('');
     const [isAddCharacterModalOpen, setIsAddCharacterModalOpen] = useState(false);
     const [isEditCharacterModalOpen, setIsEditCharacterModalOpen] = useState(false);
     const [editingCharacter, setEditingCharacter] = useState<Character | null>(null);
@@ -36,45 +36,8 @@ const MainApp: React.FC = () => {
         pointIndex: null
     });
     
-    // Character state
-    const [characters, setCharacters] = useState<Character[]>([
-        {
-            id: '1',
-            name: 'David Wang',
-            role: 'Protagonist',
-            color: '#3b82f6',
-            fillColor: 'rgba(59, 130, 246, 0.15)',
-            dataPoints: [18, 32, 58, 58, 32],
-            traits: ['Leadership', 'Courage', 'Wisdom', 'Empathy', 'Strength']
-        },
-        {
-            id: '2',
-            name: 'Jonathan Chen',
-            role: 'Antagonist',
-            color: '#10b981',
-            fillColor: 'rgba(16, 185, 129, 0.15)',
-            dataPoints: [25, 35, 62, 60, 35],
-            traits: ['Cunning', 'Power', 'Intelligence', 'Ruthless', 'Charisma']
-        },
-        {
-            id: '3',
-            name: 'Brandon Behner',
-            role: 'Supporting',
-            color: '#f97316',
-            fillColor: 'rgba(249, 115, 22, 0.15)',
-            dataPoints: [15, 30, 58, 60, 30],
-            traits: ['Loyalty', 'Humor', 'Creativity', 'Kindness', 'Courage']
-        },
-        {
-            id: '4',
-            name: 'Julius Lau',
-            role: 'Supporting',
-            color: '#a855f7',
-            fillColor: 'rgba(168, 85, 247, 0.15)',
-            dataPoints: [20, 28, 55, 58, 28],
-            traits: ['Intelligence', 'Strategy', 'Wisdom', 'Patience', 'Focus']
-        }
-    ]);
+    // Character state - starts empty for users to add their own characters
+    const [characters, setCharacters] = useState<Character[]>([]);
 
     // New character form state
     const [newCharacter, setNewCharacter] = useState({
@@ -145,10 +108,10 @@ const MainApp: React.FC = () => {
         try {
             // Define unique prompts/contexts for each story to get different mermaid outputs
             const storyPrompts: { [key: string]: string } = {
-                '1': 'customer service workflow with escalation paths and customer satisfaction tracking',
-                '2': 'research and data analysis process with validation steps and reporting phases', 
-                '3': 'project management workflow with team collaboration and milestone tracking',
-                'default': 'creative story development with character arcs'
+                '1': 'Story #1',
+                '2': 'Story #2', 
+                '3': 'Story #3',
+                'default': 'Custom Story'
             };
 
             const prompt = storyPrompts[storyId] || storyPrompts['default'];
@@ -503,447 +466,67 @@ const MainApp: React.FC = () => {
         });
     };
 
-    // Multiple flowcharts data - converted to state for dynamic updates
-    const [flowcharts, setFlowcharts] = useState<Flowchart[]>([
-        {
-            id: 'customer-support',
-            title: 'Story 1',
-            description: 'Story idea #1',
-            nodes: [],
-            // Commented out hardcoded nodes - will be populated by API
-            /* nodes: [
-        {
-            id: 'A',
-            story_id: selectedStory?.id || '',
-            act_number: 1,
-            title: 'Customer Inquiry',
-            summary: 'Initial customer contact',
-            details: 'Customer reaches out with inquiry or issue',
-            position: { x: 400, y: 50 }
-        },
-        {
-            id: 'B',
-            story_id: selectedStory?.id || '',
-            act_number: 1,
-            title: 'Inquiry Type?',
-            summary: 'Categorize inquiry',
-            details: 'Determine if inquiry is technical, billing, or account management',
-            parent_node_id: 'A',
-            position: { x: 400, y: 200 }
-        },
-        {
-            id: 'C',
-            story_id: selectedStory?.id || '',
-            act_number: 2,
-            title: 'Troubleshoot Issue',
-            summary: 'Technical support',
-            details: 'Investigate and resolve technical problems',
-            parent_node_id: 'B',
-            position: { x: 100, y: 350 }
-        },
-        {
-            id: 'D',
-            story_id: selectedStory?.id || '',
-            act_number: 2,
-            title: 'Check Billing Records',
-            summary: 'Billing inquiry handling',
-            details: 'Review customer billing information and resolve issues',
-            parent_node_id: 'B',
-            position: { x: 400, y: 350 }
-        },
-        {
-            id: 'E',
-            story_id: selectedStory?.id || '',
-            act_number: 2,
-            title: 'Access Account Details',
-            summary: 'Account management',
-            details: 'Handle account-related requests and modifications',
-            parent_node_id: 'B',
-            position: { x: 700, y: 350 }
-        },
-        {
-            id: 'F',
-            story_id: selectedStory?.id || '',
-            act_number: 2,
-            title: 'Issue Resolved?',
-            summary: 'Technical resolution check',
-            details: 'Verify if technical issue has been resolved',
-            parent_node_id: 'C',
-            position: { x: 100, y: 500 }
-        },
-        {
-            id: 'G',
-            story_id: selectedStory?.id || '',
-            act_number: 3,
-            title: 'Close Ticket',
-            summary: 'Resolution complete',
-            details: 'Issue resolved successfully, close support ticket',
-            position: { x: 400, y: 750 }
-        },
-        {
-            id: 'H',
-            story_id: selectedStory?.id || '',
-            act_number: 2,
-            title: 'Escalate to Tier 2 Support',
-            summary: 'Technical escalation',
-            details: 'Escalate unresolved technical issues to higher support tier',
-            parent_node_id: 'F',
-            position: { x: 100, y: 650 }
-        },
-        {
-            id: 'I',
-            story_id: selectedStory?.id || '',
-            act_number: 2,
-            title: 'Billing Issue Resolved?',
-            summary: 'Billing resolution check',
-            details: 'Verify if billing issue has been resolved',
-            parent_node_id: 'D',
-            position: { x: 400, y: 500 }
-        },
-        {
-            id: 'J',
-            story_id: selectedStory?.id || '',
-            act_number: 2,
-            title: 'Escalate to Billing Department',
-            summary: 'Billing escalation',
-            details: 'Escalate complex billing issues to billing department',
-            parent_node_id: 'I',
-            position: { x: 400, y: 650 }
-        },
-        {
-            id: 'K',
-            story_id: selectedStory?.id || '',
-            act_number: 2,
-            title: 'Account Issue Resolved?',
-            summary: 'Account resolution check',
-            details: 'Verify if account issue has been resolved',
-            parent_node_id: 'E',
-            position: { x: 700, y: 500 }
-        },
-        {
-            id: 'L',
-            story_id: selectedStory?.id || '',
-            act_number: 2,
-            title: 'Escalate to Account Management Team',
-            summary: 'Account escalation',
-            details: 'Escalate complex account issues to account management team',
-            parent_node_id: 'K',
-            position: { x: 700, y: 650 }
-        }
-            ], */
-            created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString()
-        },
-        {
-            id: 'research-analysis',
-            title: 'Story 2',
-            description: 'Story idea #2',
-            nodes: [],
-            // Commented out hardcoded nodes - will be populated by API
-            /* nodes: [
-                {
-                    id: 'REQ',
-                    story_id: selectedStory?.id || '',
-                    act_number: 1,
-                    title: 'Requirements Analysis',
-                    summary: 'Initial project requirements',
-                    details: 'Gather and analyze business requirements from stakeholders',
-                    position: { x: 400, y: 50 }
-                },
-                {
-                    id: 'TYPE',
-                    story_id: selectedStory?.id || '',
-                    act_number: 1,
-                    title: 'Project Type?',
-                    summary: 'Determine development approach',
-                    details: 'Decide if project is web app, mobile app, or desktop application',
-                    parent_node_id: 'REQ',
-                    position: { x: 400, y: 200 }
-                },
-                {
-                    id: 'WEB',
-                    story_id: selectedStory?.id || '',
-                    act_number: 2,
-                    title: 'Web Development',
-                    summary: 'Frontend and backend setup',
-                    details: 'Set up web application architecture with chosen frameworks',
-                    parent_node_id: 'TYPE',
-                    position: { x: 100, y: 350 }
-                },
-                {
-                    id: 'MOBILE',
-                    story_id: selectedStory?.id || '',
-                    act_number: 2,
-                    title: 'Mobile Development',
-                    summary: 'Native or cross-platform',
-                    details: 'Develop mobile application for iOS/Android platforms',
-                    parent_node_id: 'TYPE',
-                    position: { x: 400, y: 350 }
-                },
-                {
-                    id: 'DESKTOP',
-                    story_id: selectedStory?.id || '',
-                    act_number: 2,
-                    title: 'Desktop Development',
-                    summary: 'Platform-specific desktop app',
-                    details: 'Create desktop application for Windows/Mac/Linux',
-                    parent_node_id: 'TYPE',
-                    position: { x: 700, y: 350 }
-                },
-                {
-                    id: 'WEBTEST',
-                    story_id: selectedStory?.id || '',
-                    act_number: 2,
-                    title: 'Web Testing?',
-                    summary: 'Browser compatibility test',
-                    details: 'Test web application across different browsers and devices',
-                    parent_node_id: 'WEB',
-                    position: { x: 100, y: 500 }
-                },
-                {
-                    id: 'DEPLOY',
-                    story_id: selectedStory?.id || '',
-                    act_number: 3,
-                    title: 'Production Deploy',
-                    summary: 'Live deployment',
-                    details: 'Deploy application to production environment',
-                    position: { x: 400, y: 750 }
-                },
-                {
-                    id: 'WEBBUG',
-                    story_id: selectedStory?.id || '',
-                    act_number: 2,
-                    title: 'Fix Web Issues',
-                    summary: 'Resolve browser bugs',
-                    details: 'Address cross-browser compatibility and performance issues',
-                    parent_node_id: 'WEBTEST',
-                    position: { x: 100, y: 650 }
-                },
-                {
-                    id: 'MOBTEST',
-                    story_id: selectedStory?.id || '',
-                    act_number: 2,
-                    title: 'Mobile Testing?',
-                    summary: 'Device testing',
-                    details: 'Test mobile app on various devices and OS versions',
-                    parent_node_id: 'MOBILE',
-                    position: { x: 400, y: 500 }
-                },
-                {
-                    id: 'MOBBUG',
-                    story_id: selectedStory?.id || '',
-                    act_number: 2,
-                    title: 'Fix Mobile Issues',
-                    summary: 'Resolve device bugs',
-                    details: 'Fix device-specific issues and performance problems',
-                    parent_node_id: 'MOBTEST',
-                    position: { x: 400, y: 650 }
-                },
-                {
-                    id: 'DESKTEST',
-                    story_id: selectedStory?.id || '',
-                    act_number: 2,
-                    title: 'Desktop Testing?',
-                    summary: 'Platform testing',
-                    details: 'Test desktop application on target operating systems',
-                    parent_node_id: 'DESKTOP',
-                    position: { x: 700, y: 500 }
-                },
-                {
-                    id: 'DESKBUG',
-                    story_id: selectedStory?.id || '',
-                    act_number: 2,
-                    title: 'Fix Desktop Issues',
-                    summary: 'Resolve platform bugs',
-                    details: 'Address platform-specific compatibility and stability issues',
-                    parent_node_id: 'DESKTEST',
-                    position: { x: 700, y: 650 }
-                }
-            ], */
-            created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString()
-        },
-        {
-            id: 'project-management',
-            title: 'Story 3',
-            description: 'Story idea #3',
-            nodes: [],
-            // Commented out hardcoded nodes - will be populated by API
-            /* nodes: [
-                {
-                    id: 'BROWSE',
-                    story_id: selectedStory?.id || '',
-                    act_number: 1,
-                    title: 'Product Browse',
-                    summary: 'Customer shopping',
-                    details: 'Customer browses products and adds items to cart',
-                    position: { x: 400, y: 50 }
-                },
-                {
-                    id: 'CHECKOUT',
-                    story_id: selectedStory?.id || '',
-                    act_number: 1,
-                    title: 'Checkout Method?',
-                    summary: 'Choose checkout type',
-                    details: 'Customer selects guest checkout, account login, or new registration',
-                    parent_node_id: 'BROWSE',
-                    position: { x: 400, y: 200 }
-                },
-                {
-                    id: 'GUEST',
-                    story_id: selectedStory?.id || '',
-                    act_number: 2,
-                    title: 'Guest Checkout',
-                    summary: 'Quick checkout process',
-                    details: 'Process order without account creation',
-                    parent_node_id: 'CHECKOUT',
-                    position: { x: 100, y: 350 }
-                },
-                {
-                    id: 'LOGIN',
-                    story_id: selectedStory?.id || '',
-                    act_number: 2,
-                    title: 'Account Login',
-                    summary: 'Existing customer login',
-                    details: 'Customer logs into existing account for checkout',
-                    parent_node_id: 'CHECKOUT',
-                    position: { x: 400, y: 350 }
-                },
-                {
-                    id: 'REGISTER',
-                    story_id: selectedStory?.id || '',
-                    act_number: 2,
-                    title: 'New Registration',
-                    summary: 'Create new account',
-                    details: 'New customer creates account during checkout',
-                    parent_node_id: 'CHECKOUT',
-                    position: { x: 700, y: 350 }
-                },
-                {
-                    id: 'GUESTPAY',
-                    story_id: selectedStory?.id || '',
-                    act_number: 2,
-                    title: 'Guest Payment Valid?',
-                    summary: 'Validate guest payment',
-                    details: 'Process and validate payment information for guest checkout',
-                    parent_node_id: 'GUEST',
-                    position: { x: 100, y: 500 }
-                },
-                {
-                    id: 'ORDERSENT',
-                    story_id: selectedStory?.id || '',
-                    act_number: 3,
-                    title: 'Order Confirmation',
-                    summary: 'Order successfully placed',
-                    details: 'Send confirmation email and prepare for fulfillment',
-                    position: { x: 400, y: 750 }
-                },
-                {
-                    id: 'GUESTRETRY',
-                    story_id: selectedStory?.id || '',
-                    act_number: 2,
-                    title: 'Guest Payment Retry',
-                    summary: 'Payment failed retry',
-                    details: 'Handle failed payment and prompt for retry',
-                    parent_node_id: 'GUESTPAY',
-                    position: { x: 100, y: 650 }
-                },
-                {
-                    id: 'LOGINPAY',
-                    story_id: selectedStory?.id || '',
-                    act_number: 2,
-                    title: 'Account Payment Valid?',
-                    summary: 'Process account payment',
-                    details: 'Use saved payment methods or process new payment',
-                    parent_node_id: 'LOGIN',
-                    position: { x: 400, y: 500 }
-                },
-                {
-                    id: 'LOGINRETRY',
-                    story_id: selectedStory?.id || '',
-                    act_number: 2,
-                    title: 'Account Payment Retry',
-                    summary: 'Account payment failed',
-                    details: 'Handle payment failure and update payment method',
-                    parent_node_id: 'LOGINPAY',
-                    position: { x: 400, y: 650 }
-                },
-                {
-                    id: 'REGPAY',
-                    story_id: selectedStory?.id || '',
-                    act_number: 2,
-                    title: 'New Account Payment Valid?',
-                    summary: 'First-time payment',
-                    details: 'Process payment for newly registered account',
-                    parent_node_id: 'REGISTER',
-                    position: { x: 700, y: 500 }
-                },
-                {
-                    id: 'REGRETRY',
-                    story_id: selectedStory?.id || '',
-                    act_number: 2,
-                    title: 'New Account Payment Retry',
-                    summary: 'Registration payment failed',
-                    details: 'Handle payment failure during account registration',
-                    parent_node_id: 'REGPAY',
-                    position: { x: 700, y: 650 }
-                }
-            ], */
-            created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString()
-        }
-    ]);
-
-    // Initialize all stories with unique content on component mount
-    useEffect(() => {
-        const initializeStories = async () => {
-            console.log('Initializing all stories with unique content...');
-            await loadAllStories();
-        };
-        
-        // Only initialize once when component mounts and flowcharts are ready
-        if (flowcharts.length > 0) {
-            initializeStories();
-        }
-    }, [flowcharts.length]); // Depend on flowcharts being ready
+    // Multiple flowcharts data - will be populated after audio recording
+    const [flowcharts, setFlowcharts] = useState<Flowchart[]>([]);
 
     // Get current flowchart nodes
     const currentFlowchart = flowcharts.find(f => f.id === activeFlowchartId);
     const currentNodes = currentFlowchart?.nodes || [];
 
-    // Handle mermaid import
-    const handleMermaidImport = (importedNodes: StoryNode[]) => {
-        // Update the current flowchart with imported nodes
-        const updatedFlowcharts = flowcharts.map(flowchart => {
-            if (flowchart.id === activeFlowchartId) {
-                // Update title if it's still the default
-                let newTitle = flowchart.title;
-                if (flowchart.title.startsWith('Flowchart ') && importedNodes.length > 0) {
-                    // Use the first node's title as a hint for the flowchart name
-                    const firstNode = importedNodes[0];
-                    newTitle = firstNode.title.length > 20
-                        ? firstNode.title.substring(0, 20) + '...'
-                        : firstNode.title;
-                }
-
-                return {
-                    ...flowchart,
-                    title: newTitle,
-                    description: `Imported flowchart with ${importedNodes.length} nodes`,
-                    nodes: importedNodes,
-                    updated_at: new Date().toISOString()
-                };
+    // Handle mermaid import - create 3 different flowcharts from audio recording
+    const handleMermaidImport = async (importedNodes: StoryNode[]) => {
+        // Create 3 different flowchart variations
+        const flowchartTypes = [
+            { 
+                id: 'customer-support', 
+                title: 'Story 1',
+                description: 'story 1',
+                storyId: '1'
+            },
+            { 
+                id: 'research-analysis', 
+                title: 'Story 2',
+                description: 'story 2',
+                storyId: '2'
+            },
+            { 
+                id: 'project-management', 
+                title: 'Story 3',
+                description: 'story 3',
+                storyId: '3'
             }
-            return flowchart;
-        });
+        ];
 
-        // Update the flowcharts state to reflect the imported nodes
-        setFlowcharts(updatedFlowcharts);
+        // Create the base flowcharts first
+        const newFlowcharts: Flowchart[] = flowchartTypes.map(type => ({
+            id: type.id,
+            title: type.title,
+            description: type.description,
+            nodes: [], // Will be populated by loadUniqueStoryContent
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString()
+        }));
 
-        // Clear any selected node when importing new flowchart
+        // Add the new flowcharts to the list
+        setFlowcharts(newFlowcharts);
+
+        // Set the first flowchart as active
+        setActiveFlowchartId(flowchartTypes[0].id);
+
+        // Clear any selected node when importing new flowcharts
         setSelectedNode(null);
 
-        console.log('Imported nodes:', importedNodes);
+        // Load unique content for each flowchart
+        try {
+            await Promise.all([
+                loadUniqueStoryContent('1', 'customer-support'),
+                loadUniqueStoryContent('2', 'research-analysis'),
+                loadUniqueStoryContent('3', 'project-management')
+            ]);
+            console.log('Created 3 flowcharts from audio recording');
+        } catch (error) {
+            console.error('Error loading flowchart content:', error);
+        }
     };
 
     // Handle node changes
@@ -1018,38 +601,46 @@ const MainApp: React.FC = () => {
                     <div className="bg-white border-b border-gray-200">
                         <div className="flex items-center justify-between px-6 py-4">
                             <div className="flex items-center space-x-1">
-                                {flowcharts.map((flowchart) => (
-                                    <div key={flowchart.id} className="flex items-center group">
+                                {flowcharts.length > 0 ? (
+                                    <>
+                                        {flowcharts.map((flowchart) => (
+                                            <div key={flowchart.id} className="flex items-center group">
+                                                <button
+                                                    onClick={() => handleFlowchartChange(flowchart.id)}
+                                                    className={`px-4 py-2 text-sm font-medium rounded-lg transition-colors duration-200 ${
+                                                        activeFlowchartId === flowchart.id
+                                                            ? 'bg-blue-100 text-blue-700 border border-blue-200'
+                                                            : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
+                                                    }`}
+                                                >
+                                                    {flowchart.title}
+                                                </button>
+                                                {flowcharts.length > 1 && (
+                                                    <button
+                                                        onClick={() => handleDeleteFlowchart(flowchart.id)}
+                                                        className="ml-1 p-1 text-gray-400 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity duration-200"
+                                                        title="Delete flowchart"
+                                                    >
+                                                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                                                        </svg>
+                                                    </button>
+                                                )}
+                                            </div>
+                                        ))}
                                         <button
-                                            onClick={() => handleFlowchartChange(flowchart.id)}
-                                            className={`px-4 py-2 text-sm font-medium rounded-lg transition-colors duration-200 ${
-                                                activeFlowchartId === flowchart.id
-                                                    ? 'bg-blue-100 text-blue-700 border border-blue-200'
-                                                    : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
-                                            }`}
+                                            onClick={handleCreateNewFlowchart}
+                                            className="px-3 py-2 text-sm font-medium text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors duration-200 border border-dashed border-gray-300"
+                                            title="Create new flowchart"
                                         >
-                                            {flowchart.title}
+                                            + New
                                         </button>
-                                        {flowcharts.length > 1 && (
-                                            <button
-                                                onClick={() => handleDeleteFlowchart(flowchart.id)}
-                                                className="ml-1 p-1 text-gray-400 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity duration-200"
-                                                title="Delete flowchart"
-                                            >
-                                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                                                </svg>
-                                            </button>
-                                        )}
+                                    </>
+                                ) : (
+                                    <div className="text-gray-500 text-sm">
+                                        Record an audio story to generate 3 unique flowcharts
                                     </div>
-                                ))}
-                                <button
-                                    onClick={handleCreateNewFlowchart}
-                                    className="px-3 py-2 text-sm font-medium text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors duration-200 border border-dashed border-gray-300"
-                                    title="Create new flowchart"
-                                >
-                                    + New
-                                </button>
+                                )}
                             </div>
                             {currentFlowchart && (
                                 <div className="text-sm text-gray-500">
@@ -1061,13 +652,27 @@ const MainApp: React.FC = () => {
 
                     {/* Flowchart - Takes up most of the space */}
                     <div className="flex-1 min-h-0">
-                        <FlowchartView
-                            key={activeFlowchartId}
-                            nodes={currentNodes}
-                            onNodeClick={handleNodeClick}
-                            onMermaidImport={handleMermaidImport}
-                            onNodesChange={handleNodesChange}
-                        />
+                        {flowcharts.length > 0 ? (
+                            <FlowchartView
+                                key={activeFlowchartId}
+                                nodes={currentNodes}
+                                onNodeClick={handleNodeClick}
+                                onMermaidImport={handleMermaidImport}
+                                onNodesChange={handleNodesChange}
+                            />
+                        ) : (
+                            <div className="flex items-center justify-center h-full bg-gray-50">
+                                <div className="text-center p-8">
+                                    <div className="w-24 h-24 mx-auto mb-4 text-gray-300">
+                                        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                                        </svg>
+                                    </div>
+                                    <h3 className="text-lg font-medium text-gray-900 mb-2">No Flowcharts Yet</h3>
+                                    <p className="text-gray-500 mb-4">Record your story idea using the microphone in the sidebar to generate 3 unique flowcharts.</p>
+                                </div>
+                            </div>
+                        )}
                     </div>
                     
                     {/* Character Profiles Section - Collapsible */}
