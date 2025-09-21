@@ -58,7 +58,7 @@ const LandingPage: React.FC = () => {
                                 />
 
                                 <SplitText
-                                    text="From stories to branching plots to cinematic arcs, Stubby refines and accelerates your creative process."
+                                    text="From stories to branching plots to cinematic arcs, Narratree refines and accelerates your creative process."
                                     tag="p"
                                     className="text-2xl font-medium text-blue-100 mb-10 leading-relaxed max-w-xl drop-shadow-[0_3px_8px_rgba(0,0,0,0.8)] tracking-wide"
                                     delay={30}
@@ -348,7 +348,7 @@ const LandingPage: React.FC = () => {
                 </div>
             </section>
 
-            {/* Second Screen - What is StoryFlow? */}
+            {/* Second Screen - What is Narratree? */}
             <section id="how-it-works" className="relative h-screen flex items-center justify-center bg-white px-4 py-8 overflow-hidden">
                 {/* Background flowcharts outside container */}
                 <div className="absolute inset-0 pointer-events-none opacity-20">
@@ -502,7 +502,7 @@ const LandingPage: React.FC = () => {
                         <div className="max-w-5xl mx-auto text-center relative z-20">
                             <div className="mb-12">
                                 <BlurText
-                                    text="What is StoryFlow?"
+                                    text="What's Narratree?"
                                     delay={90}
                                     animateBy="words"
                                     direction="top"
@@ -511,7 +511,7 @@ const LandingPage: React.FC = () => {
                             </div>
                             <div className="space-y-12 text-2xl md:text-2xl text-gray-600 text-center">
                                 <BlurText
-                                    text="StoryFlow is an AI-powered writing assistant that helps you craft compelling narratives through interactive flowcharts and intelligent suggestions. Our platform combines the structure of traditional storytelling with modern AI technology to enhance your creative process."
+                                    text="Narratree is an AI-powered writing assistant that helps you craft compelling narratives through interactive flowcharts and intelligent suggestions. Our platform combines the structure of traditional storytelling with modern AI technology to enhance your creative process."
                                     delay={90}
                                     animateBy="words"
                                     direction="top"
@@ -558,7 +558,7 @@ const LandingPage: React.FC = () => {
                                     rotationEnd="+=220"
                                     wordAnimationEnd="+=220"
                                 >
-                                    Everyone has a story to tell. StoryFlow is built to make the writing process more intuitive and
+                                    Everyone has a story to tell. Narratree is built to make the writing process more intuitive and
                                     accessible through visual storytelling and AI assistance.
                                 </ScrollReveal>
                                 <ScrollReveal
@@ -576,40 +576,6 @@ const LandingPage: React.FC = () => {
                             </div>
                         </div>
                     </div>
-                </div>
-            </section>
-
-            {/* Fourth Screen - Join StoryFlow */}
-            <section id="join-storyflow" className="h-screen flex items-center justify-center bg-white border border-gray-100">
-                <div className="text-center max-w-3xl mx-auto px-6">
-                    <ScrollReveal
-                        textClassName="text-4xl md:text-5xl font-bold text-gray-900 tracking-tight"
-                        containerClassName="mb-8"
-                        baseOpacity={0.15}
-                        baseRotation={4}
-                        blurStrength={6}
-                        rotationEnd="+=240"
-                        wordAnimationEnd="+=240"
-                    >
-                        Join StoryFlow
-                    </ScrollReveal>
-                    <ScrollReveal
-                        textClassName="sr-inherit text-xl text-gray-600 leading-relaxed max-w-2xl mx-auto"
-                        containerClassName="mb-10 leading-relaxed"
-                        baseOpacity={0.1}
-                        baseRotation={2}
-                        blurStrength={4}
-                        rotationEnd="+=200"
-                        wordAnimationEnd="+=200"
-                    >
-                        Start crafting your story today with our intuitive tools and AI assistance.
-                    </ScrollReveal>
-                    <button
-                        onClick={handleStartWriting}
-                        className="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-4 px-10 rounded-full text-lg transition-colors duration-200"
-                    >
-                        Start Writing
-                    </button>
                 </div>
             </section>
         </div>
