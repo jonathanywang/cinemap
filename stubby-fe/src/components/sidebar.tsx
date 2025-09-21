@@ -300,130 +300,151 @@ const Sidebar: React.FC<SidebarProps> = ({
         const cleaned = transcript.trim().replace(/\s+/g, ' ');
         
         // If it's very short, return as is
-        if (cleaned.length <= 100) return cleaned;
+        if (cleaned.length <= 120) return cleaned;
         
-        // Advanced content analysis
-        const contentAnalysis = analyzeTranscriptContent(cleaned);
-        const keyTopics = extractKeyTopics(cleaned);
-        const importantStatements = extractImportantStatements(cleaned);
+        // Create a natural paraphrase that captures all the content
+        return createNaturalParaphrase(cleaned);
+    };
+
+    const createNaturalParaphrase = (text: string) => {
+        // Clean up filler words and redundancy while preserving meaning
+        let paraphrase = text
+            // Remove excessive filler words but keep the flow
+            .replace(/\b(um|uh|like you know|you know like|sort of like|kind of like)\b/gi, '')
+            .replace(/\b(basically|actually|really|very very|quite quite|pretty pretty)\b/gi, '')
+            // Clean up repetitive phrases
+            .replace(/\b(\w+)\s+\1\b/gi, '$1') // Remove immediate word repetitions
+            .replace(/\s+/g, ' ')
+            .trim();
+
+        // Split into sentences and clean each one
+        const sentences = paraphrase.split(/[.!?]+/).filter(s => s.trim().length > 5);
         
-        // Build descriptive summary using complete sentences
-        let summary = '';
+        if (sentences.length === 0) return text.substring(0, 200) + '...';
         
-        // Start with the most important statement as the foundation
-        if (importantStatements.primary && importantStatements.primary.length > 20) {
-            summary = importantStatements.primary;
+        // Process each sentence to make it more concise while preserving meaning
+        const processedSentences = sentences.map(sentence => {
+            let processed = sentence.trim();
             
-            // Add secondary important information if it adds value
-            if (importantStatements.secondary.length > 0 && summary.length < 120) {
-                const secondaryStatement = importantStatements.secondary[0];
-                if (secondaryStatement.length > 15 && !secondaryStatement.toLowerCase().includes(summary.toLowerCase().substring(0, 20))) {
-                    summary += '. ' + secondaryStatement;
+            // Replace verbose phrases with more concise equivalents
+            processed = processed
+                .replace(/\bi was thinking that maybe we could\b/gi, 'we could')
+                .replace(/\bwhat i want to do is\b/gi, 'I want to')
+                .replace(/\bthe thing is that\b/gi, '')
+                .replace(/\bit would be good if we\b/gi, 'we should')
+                .replace(/\bi think it would be better if\b/gi, 'it would be better to')
+                .replace(/\bwhat we need to do is\b/gi, 'we need to')
+                .replace(/\bthe way i see it\b/gi, 'I think')
+                .replace(/\bin my opinion\b/gi, 'I think')
+                .replace(/\bto be honest\b/gi, '')
+                .replace(/\bif you ask me\b/gi, '')
+                .replace(/\bas far as i'm concerned\b/gi, 'I think')
+                .replace(/\bat the end of the day\b/gi, 'ultimately')
+                .replace(/\bwhen all is said and done\b/gi, 'ultimately')
+                .replace(/\bthe bottom line is\b/gi, '')
+                .replace(/\blong story short\b/gi, '')
+                .replace(/\bto make a long story short\b/gi, '');
+            
+            // Clean up extra spaces
+            processed = processed.replace(/\s+/g, ' ').trim();
+            
+            // Ensure sentence starts with capital letter
+            if (processed.length > 0) {
+                processed = processed[0].toUpperCase() + processed.slice(1);
+            }
+            
+            return processed;
+        }).filter(s => s.length > 3); // Remove very short fragments
+        
+        // Combine sentences intelligently
+        let result = processedSentences.join('. ');
+        
+        // Add final period if needed
+        if (result && !result.match(/[.!?]$/)) {
+            result += '.';
+        }
+        
+        // If the paraphrase is still very long, intelligently condense while preserving all key information
+        if (result.length > 400) {
+            result = createIntelligentCondensation(result, processedSentences);
+        }
+        
+        return result || text.substring(0, 300) + '...';
+    };
+
+    const createIntelligentCondensation = (fullText: string, sentences: string[]) => {
+        // Don't just cut off - instead, combine related ideas more efficiently
+        let condensed = '';
+        let currentLength = 0;
+        const maxLength = 350;
+        
+        for (let i = 0; i < sentences.length; i++) {
+            const sentence = sentences[i];
+            const nextSentence = sentences[i + 1];
+            
+            // If adding this sentence would exceed limit, try to merge it with the previous concept
+            if (currentLength + sentence.length > maxLength && condensed.length > 0) {
+                // Try to create a summary ending that captures remaining concepts
+                const remainingSentences = sentences.slice(i);
+                if (remainingSentences.length > 0) {
+                    const keyRemainingConcepts = extractKeyConceptsFromSentences(remainingSentences);
+                    if (keyRemainingConcepts.length > 0) {
+                        condensed += `, and also discusses ${keyRemainingConcepts.join(', ')}`;
+                    }
+                }
+                break;
+            }
+            
+            // Check if we can combine this sentence with the next one more efficiently
+            if (nextSentence && sentence.length + nextSentence.length < 100) {
+                const combined = combineRelatedSentences(sentence, nextSentence);
+                if (combined !== sentence + '. ' + nextSentence) {
+                    condensed += (condensed ? '. ' : '') + combined;
+                    currentLength += combined.length + 2;
+                    i++; // Skip the next sentence since we combined it
+                    continue;
                 }
             }
-        } else {
-            // Fallback to advanced sentence analysis for descriptive content
-            summary = createDescriptiveSentenceAnalysis(cleaned);
+            
+            condensed += (condensed ? '. ' : '') + sentence;
+            currentLength += sentence.length + 2;
         }
         
-        // Enhance with key topics if summary seems incomplete or too short
-        if (summary.length < 80 && keyTopics.length > 0) {
-            const topicSentence = createTopicSentence(keyTopics, contentAnalysis);
-            if (topicSentence) {
-                summary = summary ? `${summary}. ${topicSentence}` : topicSentence;
-            }
-        }
-        
-        // Clean up and ensure reasonable length
-        summary = summary.replace(/\s+/g, ' ').trim();
-        
-        // Ensure we don't exceed reasonable length but prioritize complete sentences
-        if (summary.length > 300) {
-            const sentences = summary.split(/[.!?]+/);
-            let truncated = '';
-            for (const sentence of sentences) {
-                const nextLength = truncated + (truncated ? '. ' : '') + sentence.trim();
-                if (nextLength.length > 280) break;
-                truncated = nextLength;
-            }
-            summary = truncated + (truncated !== summary ? '.' : '');
-        }
-        
-        return summary;
+        return condensed;
     };
 
-    const createTopicSentence = (topics: string[], contentAnalysis: any) => {
-        if (topics.length === 0) return '';
+    const extractKeyConceptsFromSentences = (sentences: string[]) => {
+        const concepts: string[] = [];
+        const conceptWords = ['story', 'character', 'plot', 'design', 'create', 'build', 'plan', 'idea', 'project', 'feature', 'system', 'problem', 'solution', 'process', 'method', 'approach'];
         
-        // Create descriptive sentences based on content type and topics
-        if (contentAnalysis.isStoryContent) {
-            return `The discussion covers ${topics.slice(0, 3).join(', ')} as part of a narrative or storytelling context.`;
-        } else if (contentAnalysis.isInstructional) {
-            return `The content provides guidance on ${topics.slice(0, 3).join(', ')} with instructional details.`;
-        } else if (contentAnalysis.isProblemSolving) {
-            return `The conversation addresses issues related to ${topics.slice(0, 3).join(', ')} and potential solutions.`;
-        } else if (contentAnalysis.isDecisionMaking) {
-            return `The discussion involves decision-making around ${topics.slice(0, 3).join(', ')}.`;
-        } else {
-            return `The main topics discussed include ${topics.slice(0, 3).join(', ')}.`;
-        }
-    };
-
-    const createDescriptiveSentenceAnalysis = (text: string) => {
-        const sentences = text.split(/[.!?]+/).filter(s => s.trim().length > 15);
-        
-        if (sentences.length === 0) return text.substring(0, 150) + '...';
-        if (sentences.length === 1) return sentences[0].trim();
-        
-        // Score sentences for descriptive value and completeness
-        const descriptiveScored = sentences.map((sentence, index) => {
-            let score = 0;
-            const words = sentence.toLowerCase().split(' ');
-            const trimmed = sentence.trim();
-            
-            // Prioritize longer, more descriptive sentences
-            if (words.length >= 8 && words.length <= 25) score += 4;
-            if (words.length >= 6 && words.length <= 30) score += 2;
-            
-            // Content richness scoring
-            words.forEach(word => {
-                // Descriptive and meaningful words
-                if (['describe', 'explain', 'discuss', 'explore', 'analyze', 'consider'].includes(word)) score += 3;
-                if (['important', 'significant', 'main', 'key', 'primary', 'essential'].includes(word)) score += 3;
-                if (['create', 'develop', 'build', 'design', 'plan', 'implement'].includes(word)) score += 2;
-                if (['because', 'since', 'therefore', 'however', 'although', 'while'].includes(word)) score += 2;
-                if (word.length > 7) score += 1; // Longer words often more descriptive
+        sentences.forEach(sentence => {
+            const words = sentence.toLowerCase().split(/\s+/);
+            conceptWords.forEach(concept => {
+                if (words.includes(concept) && !concepts.includes(concept)) {
+                    concepts.push(concept);
+                }
             });
-            
-            // Sentence structure preferences
-            if (trimmed.includes(',')) score += 1; // Complex sentences often more descriptive
-            if (trimmed.match(/\b(that|which|who|where|when)\b/)) score += 1; // Relative clauses add description
-            
-            // Position-based scoring (but less weight than content)
-            if (index === 0) score += 1;
-            if (index === sentences.length - 1) score += 0.5;
-            
-            // Avoid very repetitive or simple sentences
-            const uniqueWords = new Set(words);
-            if (uniqueWords.size / words.length > 0.7) score += 1; // Good word diversity
-            
-            return { sentence: trimmed, score, index };
         });
         
-        descriptiveScored.sort((a, b) => b.score - a.score);
+        return concepts.slice(0, 3);
+    };
+
+    const combineRelatedSentences = (sentence1: string, sentence2: string) => {
+        const s1Lower = sentence1.toLowerCase();
+        const s2Lower = sentence2.toLowerCase();
         
-        // Select the best sentences that create a coherent, descriptive summary
-        let result = descriptiveScored[0].sentence;
-        
-        // Add a second sentence if it's complementary and we have room
-        if (result.length < 150 && descriptiveScored[1]) {
-            const secondSentence = descriptiveScored[1].sentence;
-            if (secondSentence.length < 100 && !secondSentence.toLowerCase().includes(result.toLowerCase().substring(0, 15))) {
-                result += '. ' + secondSentence;
-            }
+        // If sentences are about the same topic, try to combine them
+        if (s1Lower.includes('story') && s2Lower.includes('character') ||
+            s1Lower.includes('create') && s2Lower.includes('design') ||
+            s1Lower.includes('want') && s2Lower.includes('need') ||
+            s1Lower.includes('think') && s2Lower.includes('should')) {
+            
+            // Create a more natural combination
+            const connector = s2Lower.startsWith('and') || s2Lower.startsWith('also') ? ', ' : ', and ';
+            return sentence1 + connector + sentence2.toLowerCase();
         }
         
-        return result;
+        return sentence1 + '. ' + sentence2;
     };
 
     const analyzeTranscriptContent = (text: string) => {
