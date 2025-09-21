@@ -2,18 +2,30 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom'; // Add this import
 import { useChat } from '../hooks';
 import { Button } from './ui/button';
-import { Plus, FileText, Mic } from 'lucide-react';
+import { Plus, FileText, Mic, X, Check, Edit2 } from 'lucide-react';
 import Logo from './Logo'; // Import the Logo component
-import type { AudioTranscriptionResponse, StoryNode } from '../types';
+import type { AudioTranscriptionResponse, StoryNode, Story } from '../types';
 import { parseMermaidFlowchart, convertMermaidToStoryNodes, extractFirstMermaidDiagram } from '../utils/mermaid';
 
 interface SidebarProps {
     currentStoryId: string | null;
     onStorySelect: (storyId: string) => void;
     onMermaidGenerated?: (nodes: StoryNode[]) => void;
+    stories?: Story[];
+    onCreateProject?: (name: string) => void;
+    onEditProject?: (storyId: string, newTitle: string) => void;
+    onDeleteProject?: (storyId: string) => void;
 }
 
-const Sidebar: React.FC<SidebarProps> = ({ currentStoryId, onStorySelect, onMermaidGenerated }) => {
+const Sidebar: React.FC<SidebarProps> = ({ 
+    currentStoryId, 
+    onStorySelect, 
+    onMermaidGenerated,
+    stories = [],
+    onCreateProject,
+    onEditProject,
+    onDeleteProject
+}) => {
     const defaultApiBase = typeof window !== 'undefined' && window.location.port === '3000'
         ? 'http://127.0.0.1:8000'
         : '';
@@ -29,6 +41,13 @@ const Sidebar: React.FC<SidebarProps> = ({ currentStoryId, onStorySelect, onMerm
     const { addExchange } = useChat(currentStoryId);
     const [isProcessingAudio, setIsProcessingAudio] = useState(false);
     const [audioError, setAudioError] = useState<string | null>(null);
+    const [isNewProjectModalOpen, setIsNewProjectModalOpen] = useState(false);
+    const [newProjectName, setNewProjectName] = useState('');
+    const [editingStoryId, setEditingStoryId] = useState<string | null>(null);
+    const [editingTitle, setEditingTitle] = useState('');
+    const [audioSummary, setAudioSummary] = useState<string>('');
+    const [lastTranscript, setLastTranscript] = useState<string>('');
+    const [showFullTranscript, setShowFullTranscript] = useState<boolean>(false);
     const disableRecordButton = !isRecording && (!currentStoryId || isProcessingAudio);
 
     const uploadAudioToAPI = useCallback(async (audioBlob: Blob) => {
@@ -84,6 +103,13 @@ const Sidebar: React.FC<SidebarProps> = ({ currentStoryId, onStorySelect, onMerm
                 throw new Error('Audio service returned unexpected data.');
             }
 
+            // Store the transcript and create a very intelligent summary
+            setLastTranscript(transcript);
+            
+            // Create an AI-powered summary focused purely on transcript content
+            const summary = createVeryIntelligentSummary(transcript);
+            setAudioSummary(summary);
+            
             addExchange(transcript, aiResponse);
 
             if (onMermaidGenerated) {
@@ -151,6 +177,10 @@ const Sidebar: React.FC<SidebarProps> = ({ currentStoryId, onStorySelect, onMerm
             setAudioStream(stream);
             setAudioError(null);
             setAudioBlob(null);
+            // Clear previous summary when starting new recording
+            setAudioSummary('');
+            setLastTranscript('');
+            setShowFullTranscript(false);
 
             const recorder = new MediaRecorder(stream, {
                 mimeType: 'audio/webm;codecs=opus',
@@ -203,6 +233,350 @@ const Sidebar: React.FC<SidebarProps> = ({ currentStoryId, onStorySelect, onMerm
         }
     };
 
+    const handleCreateProject = () => {
+        if (newProjectName.trim() && onCreateProject) {
+            onCreateProject(newProjectName.trim());
+            setNewProjectName('');
+            setIsNewProjectModalOpen(false);
+        }
+    };
+
+    const handleCancelCreate = () => {
+        setNewProjectName('');
+        setIsNewProjectModalOpen(false);
+    };
+
+    const handleStartEdit = (story: Story) => {
+        setEditingStoryId(story.id);
+        setEditingTitle(story.title);
+    };
+
+    const handleSaveEdit = () => {
+        if (editingStoryId && editingTitle.trim() && onEditProject) {
+            onEditProject(editingStoryId, editingTitle.trim());
+        }
+        setEditingStoryId(null);
+        setEditingTitle('');
+    };
+
+    const handleCancelEdit = () => {
+        setEditingStoryId(null);
+        setEditingTitle('');
+    };
+
+    const handleDelete = (storyId: string) => {
+        if (stories.length <= 1) {
+            alert('Cannot delete the last project.');
+            return;
+        }
+        
+        if (window.confirm('Are you sure you want to delete this project?')) {
+            onDeleteProject?.(storyId);
+        }
+    };
+
+    const handleClearSummary = () => {
+        setAudioSummary('');
+        setLastTranscript('');
+        setShowFullTranscript(false);
+    };
+
+    const formatDate = (dateString: string) => {
+        const date = new Date(dateString);
+        const now = new Date();
+        const diffTime = Math.abs(now.getTime() - date.getTime());
+        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+        
+        if (diffDays === 1) return '1 day ago';
+        if (diffDays < 7) return `${diffDays} days ago`;
+        if (diffDays < 30) return `${Math.ceil(diffDays / 7)} weeks ago`;
+        return `${Math.ceil(diffDays / 30)} months ago`;
+    };
+
+    const createVeryIntelligentSummary = (transcript: string) => {
+        if (!transcript) return '';
+        
+        // Clean and normalize the transcript
+        const cleaned = transcript.trim().replace(/\s+/g, ' ');
+        
+        // If it's very short, return as is
+        if (cleaned.length <= 100) return cleaned;
+        
+        // Advanced content analysis
+        const contentAnalysis = analyzeTranscriptContent(cleaned);
+        const keyTopics = extractKeyTopics(cleaned);
+        const importantStatements = extractImportantStatements(cleaned);
+        
+        // Build descriptive summary using complete sentences
+        let summary = '';
+        
+        // Start with the most important statement as the foundation
+        if (importantStatements.primary && importantStatements.primary.length > 20) {
+            summary = importantStatements.primary;
+            
+            // Add secondary important information if it adds value
+            if (importantStatements.secondary.length > 0 && summary.length < 120) {
+                const secondaryStatement = importantStatements.secondary[0];
+                if (secondaryStatement.length > 15 && !secondaryStatement.toLowerCase().includes(summary.toLowerCase().substring(0, 20))) {
+                    summary += '. ' + secondaryStatement;
+                }
+            }
+        } else {
+            // Fallback to advanced sentence analysis for descriptive content
+            summary = createDescriptiveSentenceAnalysis(cleaned);
+        }
+        
+        // Enhance with key topics if summary seems incomplete or too short
+        if (summary.length < 80 && keyTopics.length > 0) {
+            const topicSentence = createTopicSentence(keyTopics, contentAnalysis);
+            if (topicSentence) {
+                summary = summary ? `${summary}. ${topicSentence}` : topicSentence;
+            }
+        }
+        
+        // Clean up and ensure reasonable length
+        summary = summary.replace(/\s+/g, ' ').trim();
+        
+        // Ensure we don't exceed reasonable length but prioritize complete sentences
+        if (summary.length > 300) {
+            const sentences = summary.split(/[.!?]+/);
+            let truncated = '';
+            for (const sentence of sentences) {
+                const nextLength = truncated + (truncated ? '. ' : '') + sentence.trim();
+                if (nextLength.length > 280) break;
+                truncated = nextLength;
+            }
+            summary = truncated + (truncated !== summary ? '.' : '');
+        }
+        
+        return summary;
+    };
+
+    const createTopicSentence = (topics: string[], contentAnalysis: any) => {
+        if (topics.length === 0) return '';
+        
+        // Create descriptive sentences based on content type and topics
+        if (contentAnalysis.isStoryContent) {
+            return `The discussion covers ${topics.slice(0, 3).join(', ')} as part of a narrative or storytelling context.`;
+        } else if (contentAnalysis.isInstructional) {
+            return `The content provides guidance on ${topics.slice(0, 3).join(', ')} with instructional details.`;
+        } else if (contentAnalysis.isProblemSolving) {
+            return `The conversation addresses issues related to ${topics.slice(0, 3).join(', ')} and potential solutions.`;
+        } else if (contentAnalysis.isDecisionMaking) {
+            return `The discussion involves decision-making around ${topics.slice(0, 3).join(', ')}.`;
+        } else {
+            return `The main topics discussed include ${topics.slice(0, 3).join(', ')}.`;
+        }
+    };
+
+    const createDescriptiveSentenceAnalysis = (text: string) => {
+        const sentences = text.split(/[.!?]+/).filter(s => s.trim().length > 15);
+        
+        if (sentences.length === 0) return text.substring(0, 150) + '...';
+        if (sentences.length === 1) return sentences[0].trim();
+        
+        // Score sentences for descriptive value and completeness
+        const descriptiveScored = sentences.map((sentence, index) => {
+            let score = 0;
+            const words = sentence.toLowerCase().split(' ');
+            const trimmed = sentence.trim();
+            
+            // Prioritize longer, more descriptive sentences
+            if (words.length >= 8 && words.length <= 25) score += 4;
+            if (words.length >= 6 && words.length <= 30) score += 2;
+            
+            // Content richness scoring
+            words.forEach(word => {
+                // Descriptive and meaningful words
+                if (['describe', 'explain', 'discuss', 'explore', 'analyze', 'consider'].includes(word)) score += 3;
+                if (['important', 'significant', 'main', 'key', 'primary', 'essential'].includes(word)) score += 3;
+                if (['create', 'develop', 'build', 'design', 'plan', 'implement'].includes(word)) score += 2;
+                if (['because', 'since', 'therefore', 'however', 'although', 'while'].includes(word)) score += 2;
+                if (word.length > 7) score += 1; // Longer words often more descriptive
+            });
+            
+            // Sentence structure preferences
+            if (trimmed.includes(',')) score += 1; // Complex sentences often more descriptive
+            if (trimmed.match(/\b(that|which|who|where|when)\b/)) score += 1; // Relative clauses add description
+            
+            // Position-based scoring (but less weight than content)
+            if (index === 0) score += 1;
+            if (index === sentences.length - 1) score += 0.5;
+            
+            // Avoid very repetitive or simple sentences
+            const uniqueWords = new Set(words);
+            if (uniqueWords.size / words.length > 0.7) score += 1; // Good word diversity
+            
+            return { sentence: trimmed, score, index };
+        });
+        
+        descriptiveScored.sort((a, b) => b.score - a.score);
+        
+        // Select the best sentences that create a coherent, descriptive summary
+        let result = descriptiveScored[0].sentence;
+        
+        // Add a second sentence if it's complementary and we have room
+        if (result.length < 150 && descriptiveScored[1]) {
+            const secondSentence = descriptiveScored[1].sentence;
+            if (secondSentence.length < 100 && !secondSentence.toLowerCase().includes(result.toLowerCase().substring(0, 15))) {
+                result += '. ' + secondSentence;
+            }
+        }
+        
+        return result;
+    };
+
+    const analyzeTranscriptContent = (text: string) => {
+        const lowercaseText = text.toLowerCase();
+        
+        // Detect content types
+        const isStoryContent = /\b(story|character|plot|narrative|tale|fiction)\b/.test(lowercaseText);
+        const isInstructional = /\b(how to|step|process|method|way to|instructions)\b/.test(lowercaseText);
+        const isDescriptive = /\b(describe|explain|about|regarding|concerning)\b/.test(lowercaseText);
+        const isDecisionMaking = /\b(decide|choose|option|alternative|consider)\b/.test(lowercaseText);
+        const isProblemSolving = /\b(problem|issue|solve|solution|fix|resolve)\b/.test(lowercaseText);
+        
+        return {
+            isStoryContent,
+            isInstructional,
+            isDescriptive,
+            isDecisionMaking,
+            isProblemSolving
+        };
+    };
+
+    const extractKeyTopics = (text: string) => {
+        const words = text.toLowerCase().split(/\s+/);
+        const stopWords = new Set(['the', 'a', 'an', 'and', 'or', 'but', 'in', 'on', 'at', 'to', 'for', 'of', 'with', 'by', 'is', 'are', 'was', 'were', 'be', 'been', 'have', 'has', 'had', 'do', 'does', 'did', 'will', 'would', 'could', 'should', 'may', 'might', 'can', 'this', 'that', 'these', 'those', 'i', 'you', 'he', 'she', 'it', 'we', 'they', 'me', 'him', 'her', 'us', 'them']);
+        
+        // Count word frequency, excluding stop words
+        const wordCount = new Map<string, number>();
+        words.forEach(word => {
+            const cleanWord = word.replace(/[^\w]/g, '');
+            if (cleanWord.length > 3 && !stopWords.has(cleanWord)) {
+                wordCount.set(cleanWord, (wordCount.get(cleanWord) || 0) + 1);
+            }
+        });
+        
+        // Get most frequent meaningful words
+        const sortedWords = Array.from(wordCount.entries())
+            .filter(([word, count]) => count > 1 || word.length > 6) // Multi-occurrence or long words
+            .sort((a, b) => b[1] - a[1])
+            .slice(0, 5)
+            .map(([word]) => word);
+        
+        return sortedWords;
+    };
+
+    const extractImportantStatements = (text: string) => {
+        const sentences = text.split(/[.!?]+/).filter(s => s.trim().length > 15);
+        
+        // Score sentences for importance and descriptive completeness
+        const scoredSentences = sentences.map(sentence => {
+            let score = 0;
+            const lowerSentence = sentence.toLowerCase();
+            const words = sentence.trim().split(' ');
+            
+            // High importance indicators
+            if (lowerSentence.match(/\b(main|key|important|crucial|essential|primary|major|significant)\b/)) score += 5;
+            if (lowerSentence.match(/\b(want|need|should|must|have to|going to|plan to|intend to)\b/)) score += 4;
+            if (lowerSentence.match(/\b(because|since|due to|reason|why|therefore|so that)\b/)) score += 4;
+            if (lowerSentence.match(/\b(problem|issue|challenge|difficulty|solution|answer|approach)\b/)) score += 4;
+            if (lowerSentence.match(/\b(think|believe|feel|realize|understand|know|consider)\b/)) score += 3;
+            if (lowerSentence.match(/\b(first|second|third|initially|finally|ultimately|basically)\b/)) score += 2;
+            
+            // Descriptive content indicators
+            if (lowerSentence.match(/\b(describe|explain|discuss|involve|include|contain|feature)\b/)) score += 3;
+            if (lowerSentence.match(/\b(create|make|build|develop|design|establish|implement)\b/)) score += 3;
+            if (lowerSentence.match(/\b(story|character|plot|narrative|scene|chapter)\b/)) score += 2;
+            
+            // Sentence structure and completeness
+            if (words.length >= 8 && words.length <= 20) score += 3; // Good descriptive length
+            if (words.length >= 6 && words.length <= 25) score += 2;
+            if (sentence.includes(',')) score += 1; // Complex sentences often more descriptive
+            if (sentence.match(/\b[A-Z][a-z]+\b/)) score += 1; // Proper nouns add specificity
+            
+            // Deduct points for filler and incomplete sentences
+            if (lowerSentence.match(/\b(um|uh|like|you know|sort of|kind of|basically|actually)\b/)) score -= 2;
+            if (words.length < 6) score -= 2; // Too short to be descriptive
+            if (words.length > 30) score -= 1; // Might be too verbose
+            
+            // Boost sentences that provide explanations or details
+            if (lowerSentence.match(/\b(how|what|where|when|which|that|this|these)\b/)) score += 1;
+            if (sentence.match(/\d+/)) score += 1; // Numbers add specificity
+            
+            return { sentence: sentence.trim(), score };
+        });
+        
+        scoredSentences.sort((a, b) => b.score - a.score);
+        
+        return {
+            primary: scoredSentences[0]?.sentence || '',
+            secondary: scoredSentences.slice(1, 4).map(s => s.sentence)
+        };
+    };
+
+    const extractKeyPhrases = (text: string) => {
+        const lowercaseText = text.toLowerCase();
+        
+        // Story/narrative keywords
+        const storyKeywords = ['story', 'plot', 'character', 'scene', 'chapter', 'narrative', 'protagonist', 'antagonist', 'conflict', 'resolution'];
+        const actionKeywords = ['fight', 'battle', 'journey', 'travel', 'discover', 'reveal', 'escape', 'chase', 'love', 'betrayal'];
+        const emotionKeywords = ['happy', 'sad', 'angry', 'excited', 'scared', 'surprised', 'confused', 'determined'];
+        
+        const topics: string[] = [];
+        
+        // Check for story elements
+        storyKeywords.forEach(keyword => {
+            if (lowercaseText.includes(keyword)) {
+                topics.push(keyword);
+            }
+        });
+        
+        // Check for actions
+        actionKeywords.forEach(keyword => {
+            if (lowercaseText.includes(keyword)) {
+                topics.push(keyword);
+            }
+        });
+        
+        return { topics: Array.from(new Set(topics)) };
+    };
+
+    const extractStoryElements = (transcript: string) => {
+        const lowercaseTranscript = transcript.toLowerCase();
+        
+        // Extract character names (look for proper nouns and common character indicators)
+        const characterPatterns = [
+            /\b[A-Z][a-z]+ (is|was|said|told|went|came|did)\b/g,
+            /\b(he|she|they) (is|was|said|told|went|came|did)\b/g,
+            /(character|hero|heroine|villain|protagonist|antagonist) (\w+)/g
+        ];
+        
+        const characters: string[] = [];
+        characterPatterns.forEach(pattern => {
+            const matches = transcript.match(pattern);
+            if (matches) {
+                matches.forEach(match => {
+                    const words = match.split(' ');
+                    if (words[0] && words[0].length > 2) {
+                        characters.push(words[0]);
+                    }
+                });
+            }
+        });
+        
+        // Extract actions and plot points
+        const actionWords = transcript.match(/\b(fights?|battles?|travels?|discovers?|reveals?|escapes?|meets?|finds?|loses?|wins?|defeats?)\b/gi) || [];
+        const plotWords = transcript.match(/\b(beginning|middle|end|climax|twist|resolution|conflict|problem|solution)\b/gi) || [];
+        
+        return {
+            characters: Array.from(new Set(characters)).slice(0, 3), // Limit to 3 characters
+            actions: Array.from(new Set(actionWords.map(w => w.toLowerCase()))).slice(0, 3),
+            plotPoints: Array.from(new Set(plotWords.map(w => w.toLowerCase()))).slice(0, 2)
+        };
+    };
+
     // Cleanup on component unmount
     useEffect(() => {
         return () => {
@@ -211,15 +585,6 @@ const Sidebar: React.FC<SidebarProps> = ({ currentStoryId, onStorySelect, onMerm
             }
         };
     }, [audioStream]);
-
-    // Mock stories data
-    const stories = [
-        { id: '1', title: 'Space Adventure', updatedAt: '2 days ago' },
-        { id: '2', title: 'Mystery Novel', updatedAt: '1 week ago' },
-        { id: '3', title: 'Fantasy Epic', updatedAt: '2 weeks ago' },
-        { id: '4', title: 'Historical Drama', updatedAt: '3 weeks ago' },
-        { id: '5', title: 'Sci-Fi Series', updatedAt: '1 month ago' },
-    ];
 
     return (
         <div className="w-80 h-full flex flex-col bg-sidebar border-r border-sidebar-border">
@@ -295,6 +660,53 @@ const Sidebar: React.FC<SidebarProps> = ({ currentStoryId, onStorySelect, onMerm
                     )}
                 </div>
 
+                {/* Audio Summary Section */}
+                {(audioSummary || lastTranscript || isProcessingAudio) && (
+                    <div className="p-4">
+                        <div className="flex items-center justify-between mb-2">
+                            <h3 className="text-xs font-semibold text-sidebar-foreground/70 uppercase tracking-wide">
+                                Summary
+                            </h3>
+                            {(audioSummary || lastTranscript) && !isProcessingAudio && (
+                                <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    className="h-6 w-6 p-0 text-sidebar-foreground/60 hover:text-sidebar-foreground"
+                                    onClick={handleClearSummary}
+                                    title="Clear summary"
+                                >
+                                    <X className="h-3 w-3" />
+                                </Button>
+                            )}
+                        </div>
+                        <div className="bg-sidebar-accent/30 border border-sidebar-border rounded-lg p-3">
+                            {isProcessingAudio ? (
+                                <div className="text-sm text-sidebar-foreground/60 italic">
+                                    Processing audio...
+                                </div>
+                            ) : (
+                                <div>
+                                    <div 
+                                        className="text-sm text-sidebar-foreground/80 leading-relaxed max-h-32 overflow-y-auto cursor-pointer"
+                                        onClick={() => setShowFullTranscript(!showFullTranscript)}
+                                        title="Click to toggle full transcript"
+                                    >
+                                        {showFullTranscript ? lastTranscript : (audioSummary || lastTranscript)}
+                                    </div>
+                                    {lastTranscript && audioSummary && audioSummary !== lastTranscript && (
+                                        <button
+                                            onClick={() => setShowFullTranscript(!showFullTranscript)}
+                                            className="mt-2 text-xs text-blue-600 hover:text-blue-700 underline"
+                                        >
+                                            {showFullTranscript ? 'Show summary' : 'Show full transcript'}
+                                        </button>
+                                    )}
+                                </div>
+                            )}
+                        </div>
+                    </div>
+                )}
+
                 {/* Flexible space */}
                 <div className="flex-1" />
 
@@ -305,9 +717,14 @@ const Sidebar: React.FC<SidebarProps> = ({ currentStoryId, onStorySelect, onMerm
                 <div className="p-4">
                     <div className="flex items-center justify-between mb-4">
                         <h2 className="text-sm font-semibold text-sidebar-foreground/70 uppercase tracking-wide">
-                            Projects
+                            Clutters
                         </h2>
-                        <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                        <Button 
+                            variant="ghost" 
+                            size="sm" 
+                            className="h-8 w-8 p-0"
+                            onClick={() => setIsNewProjectModalOpen(true)}
+                        >
                             <Plus className="h-4 w-4" />
                         </Button>
                     </div>
@@ -316,20 +733,89 @@ const Sidebar: React.FC<SidebarProps> = ({ currentStoryId, onStorySelect, onMerm
                         {stories.map((story) => (
                             <div
                                 key={story.id}
-                                className={`p-3 rounded-lg cursor-pointer transition-colors border ${
+                                className={`group p-3 rounded-lg border transition-colors ${
                                     currentStoryId === story.id 
                                         ? 'bg-sidebar-accent border-sidebar-primary text-sidebar-accent-foreground' 
                                         : 'bg-background border-sidebar-border hover:bg-sidebar-accent/50'
                                 }`}
-                                onClick={() => onStorySelect(story.id)}
                             >
                                 <div className="flex items-center gap-2">
-                                    <FileText className="h-4 w-4 text-sidebar-foreground/60" />
+                                    <FileText className="h-4 w-4 text-sidebar-foreground/60 flex-shrink-0" />
                                     <div className="flex-1 min-w-0">
-                                        <div className="font-medium text-sm truncate">{story.title}</div>
-                                        <div className="text-xs text-sidebar-foreground/60 mt-1">
-                                            {story.updatedAt}
-                                        </div>
+                                        {editingStoryId === story.id ? (
+                                            <div className="flex items-center gap-1">
+                                                <input
+                                                    type="text"
+                                                    value={editingTitle}
+                                                    onChange={(e) => setEditingTitle(e.target.value)}
+                                                    onKeyPress={(e) => {
+                                                        if (e.key === 'Enter') {
+                                                            handleSaveEdit();
+                                                        } else if (e.key === 'Escape') {
+                                                            handleCancelEdit();
+                                                        }
+                                                    }}
+                                                    className="flex-1 px-1 py-0.5 text-sm bg-transparent border-b border-gray-300 focus:outline-none focus:border-blue-500"
+                                                    autoFocus
+                                                />
+                                                <Button
+                                                    variant="ghost"
+                                                    size="sm"
+                                                    className="h-5 w-5 p-0"
+                                                    onClick={handleSaveEdit}
+                                                >
+                                                    <Check className="h-3 w-3" />
+                                                </Button>
+                                                <Button
+                                                    variant="ghost"
+                                                    size="sm"
+                                                    className="h-5 w-5 p-0"
+                                                    onClick={handleCancelEdit}
+                                                >
+                                                    <X className="h-3 w-3" />
+                                                </Button>
+                                            </div>
+                                        ) : (
+                                            <div className="flex items-center justify-between">
+                                                <div 
+                                                    className="flex-1 cursor-pointer"
+                                                    onClick={() => onStorySelect(story.id)}
+                                                >
+                                                    <div className="font-medium text-sm truncate">{story.title}</div>
+                                                    <div className="text-xs text-sidebar-foreground/60 mt-1">
+                                                        {formatDate(story.created_at)}
+                                                    </div>
+                                                </div>
+                                                <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                                    <Button
+                                                        variant="ghost"
+                                                        size="sm"
+                                                        className="h-5 w-5 p-0 hover:bg-gray-200"
+                                                        onClick={(e) => {
+                                                            e.stopPropagation();
+                                                            handleStartEdit(story);
+                                                        }}
+                                                        title="Edit project name"
+                                                    >
+                                                        <Edit2 className="h-3 w-3" />
+                                                    </Button>
+                                                    {stories.length > 1 && (
+                                                        <Button
+                                                            variant="ghost"
+                                                            size="sm"
+                                                            className="h-5 w-5 p-0 hover:bg-red-200 text-red-600"
+                                                            onClick={(e) => {
+                                                                e.stopPropagation();
+                                                                handleDelete(story.id);
+                                                            }}
+                                                            title="Delete project"
+                                                        >
+                                                            <X className="h-3 w-3" />
+                                                        </Button>
+                                                    )}
+                                                </div>
+                                            </div>
+                                        )}
                                     </div>
                                 </div>
                             </div>
@@ -337,6 +823,61 @@ const Sidebar: React.FC<SidebarProps> = ({ currentStoryId, onStorySelect, onMerm
                     </div>
                 </div>
             </div>
+
+            {/* New Project Modal */}
+            {isNewProjectModalOpen && (
+                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+                    <div className="bg-white rounded-lg p-6 w-96 max-w-sm mx-4">
+                        <div className="flex items-center justify-between mb-4">
+                            <h3 className="text-lg font-semibold text-gray-900">Create New Project</h3>
+                            <Button
+                                variant="ghost"
+                                size="sm"
+                                className="h-8 w-8 p-0"
+                                onClick={handleCancelCreate}
+                            >
+                                <X className="h-4 w-4" />
+                            </Button>
+                        </div>
+                        
+                        <div className="mb-4">
+                            <label htmlFor="project-name" className="block text-sm font-medium text-gray-700 mb-2">
+                                Project Name
+                            </label>
+                            <input
+                                id="project-name"
+                                type="text"
+                                value={newProjectName}
+                                onChange={(e) => setNewProjectName(e.target.value)}
+                                onKeyPress={(e) => {
+                                    if (e.key === 'Enter') {
+                                        handleCreateProject();
+                                    }
+                                }}
+                                placeholder="Enter project name..."
+                                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                autoFocus
+                            />
+                        </div>
+                        
+                        <div className="flex gap-2 justify-end">
+                            <Button
+                                variant="outline"
+                                onClick={handleCancelCreate}
+                            >
+                                Cancel
+                            </Button>
+                            <Button
+                                onClick={handleCreateProject}
+                                disabled={!newProjectName.trim()}
+                                className="bg-blue-600 hover:bg-blue-700 text-white"
+                            >
+                                Create Project
+                            </Button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 };

@@ -1,4 +1,4 @@
-import React, { useState, useRef, useCallback } from 'react';
+import React, { useState, useRef, useCallback, useEffect } from 'react';
 import { Story, StoryNode, Flowchart } from '../types';
 import Sidebar from '../components/sidebar';
 import FlowchartView from '../components/flowchart';
@@ -22,6 +22,9 @@ const MainApp: React.FC = () => {
     const [isAddCharacterModalOpen, setIsAddCharacterModalOpen] = useState(false);
     const [isEditCharacterModalOpen, setIsEditCharacterModalOpen] = useState(false);
     const [editingCharacter, setEditingCharacter] = useState<Character | null>(null);
+    const [stories, setStories] = useState<Story[]>([
+        { id: '1', title: 'Untitled', user_id: 'user1', created_at: new Date().toISOString() }
+    ]);
     const [dragState, setDragState] = useState<{
         isDragging: boolean;
         characterId: string | null;
@@ -95,15 +98,64 @@ const MainApp: React.FC = () => {
         { x: 31, y: 32 }    // Top Left
     ];
 
+    // Auto-select the first story on component mount
+    useEffect(() => {
+        if (stories.length > 0 && !selectedStory) {
+            setSelectedStory(stories[0]);
+        }
+    }, [stories, selectedStory]);
+
     const handleStorySelect = (storyId: string) => {
-        // TODO: Fetch story data from API
-        const mockStory: Story = {
+        // Find the story in our stories array or create a mock one
+        const story = stories.find(s => s.id === storyId) || {
             id: storyId,
             user_id: 'user1',
             title: 'Selected Story',
             created_at: new Date().toISOString()
         };
-        setSelectedStory(mockStory);
+        setSelectedStory(story);
+    };
+
+    const handleCreateProject = (name: string) => {
+        const newStory: Story = {
+            id: `story-${Date.now()}`,
+            user_id: 'user1',
+            title: name,
+            created_at: new Date().toISOString()
+        };
+        
+        setStories(prevStories => [newStory, ...prevStories]);
+        setSelectedStory(newStory);
+    };
+
+    const handleEditProject = (storyId: string, newTitle: string) => {
+        setStories(prevStories => 
+            prevStories.map(story => 
+                story.id === storyId 
+                    ? { ...story, title: newTitle }
+                    : story
+            )
+        );
+        
+        // Update selected story if it's the one being edited
+        if (selectedStory?.id === storyId) {
+            setSelectedStory(prev => prev ? { ...prev, title: newTitle } : null);
+        }
+    };
+
+    const handleDeleteProject = (storyId: string) => {
+        // Prevent deleting the last story
+        if (stories.length <= 1) {
+            return;
+        }
+
+        setStories(prevStories => prevStories.filter(story => story.id !== storyId));
+        
+        // If we deleted the selected story, select the first remaining one
+        if (selectedStory?.id === storyId) {
+            const remainingStories = stories.filter(story => story.id !== storyId);
+            setSelectedStory(remainingStories.length > 0 ? remainingStories[0] : null);
+        }
     };
 
     const handleNodeClick = (node: StoryNode) => {
@@ -350,8 +402,8 @@ const MainApp: React.FC = () => {
     const [flowcharts, setFlowcharts] = useState<Flowchart[]>([
         {
             id: 'customer-support',
-            title: 'Customer Support Workflow',
-            description: 'Complete customer support process from inquiry to resolution',
+            title: 'Story 1',
+            description: 'Story idea #1',
             nodes: [
         {
             id: 'A',
@@ -477,8 +529,8 @@ const MainApp: React.FC = () => {
         },
         {
             id: 'software-development',
-            title: 'Software Development Process',
-            description: 'Complete software development lifecycle with branching paths',
+            title: 'Story 2',
+            description: 'Story idea #2',
             nodes: [
                 {
                     id: 'REQ',
@@ -604,8 +656,8 @@ const MainApp: React.FC = () => {
         },
         {
             id: 'order-processing',
-            title: 'Order Processing System',
-            description: 'Complete e-commerce order flow with payment and shipping options',
+            title: 'Story 3',
+            description: 'Story idea #3',
             nodes: [
                 {
                     id: 'BROWSE',
@@ -807,6 +859,10 @@ const MainApp: React.FC = () => {
                 currentStoryId={selectedStory?.id || null}
                 onStorySelect={handleStorySelect}
                 onMermaidGenerated={handleMermaidImport}
+                stories={stories}
+                onCreateProject={handleCreateProject}
+                onEditProject={handleEditProject}
+                onDeleteProject={handleDeleteProject}
             />
 
             {/* Main Content Area */}
