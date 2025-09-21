@@ -1,9 +1,23 @@
 import { useState, useCallback } from 'react';
-import { Story, ChatMessage } from '../types';
+import { ChatMessage } from '../types';
 
 export const useChat = (storyId?: string | null) => {
     const [messages, setMessages] = useState<ChatMessage[]>([]);
     const [isLoading, setIsLoading] = useState(false);
+
+    const addExchange = useCallback((userMessage: string, aiResponse: string) => {
+        if (!storyId) return;
+
+        const newMessage: ChatMessage = {
+            id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+            story_id: storyId,
+            user_message: userMessage,
+            ai_response: aiResponse,
+            timestamp: new Date().toISOString(),
+        };
+
+        setMessages((prev) => [...prev, newMessage]);
+    }, [storyId]);
 
     const sendMessage = useCallback(async (message: string) => {
         if (!storyId) return;
@@ -11,25 +25,18 @@ export const useChat = (storyId?: string | null) => {
         setIsLoading(true);
         try {
             // TODO: Replace with actual API call
-            const newMessage: ChatMessage = {
-                id: Date.now().toString(),
-                story_id: storyId,
-                user_message: message,
-                ai_response: "This is a placeholder AI response.",
-                timestamp: new Date().toISOString()
-            };
-
-            setMessages(prev => [...prev, newMessage]);
+            addExchange(message, "This is a placeholder AI response.");
         } catch (error) {
             console.error('Error sending message:', error);
         } finally {
             setIsLoading(false);
         }
-    }, [storyId]);
+    }, [storyId, addExchange]);
 
     return {
         messages,
         sendMessage,
         isLoading,
+        addExchange,
     };
 };

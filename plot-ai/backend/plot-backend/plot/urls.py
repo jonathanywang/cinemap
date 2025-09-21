@@ -24,6 +24,7 @@ urlpatterns = [
     path('api/auth/login/', views.LoginAPIView.as_view(), name='api_login'),
     path('api/auth/logout/', views.LogoutAPIView.as_view(), name='api_logout'),
     path('api/auth/user/', views.UserAPIView.as_view(), name='api_user'),
+    path('api/audio/transcribe/', views.AudioTranscriptionView.as_view(), name='audio_transcribe'),
     path('api/', include('story.urls')),
     path('api/', include('interview.urls')),
     path('api/', include('generation.urls')),
