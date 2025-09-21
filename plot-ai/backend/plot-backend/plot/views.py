@@ -23,24 +23,27 @@ from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-import whisper
-
 logger = logging.getLogger(__name__)
 
 load_dotenv()
 
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
 
+# Optional whisper import for audio transcription
 try:
+    import whisper
     WHISPER_MODEL = whisper.load_model("turbo")
+except ImportError:
+    logger.warning("Whisper not installed - audio transcription will be unavailable")
+    WHISPER_MODEL = None
 except Exception as exc:
     logger.warning("Failed to load Whisper model: %s", exc)
     WHISPER_MODEL = None
 
 try:
-    GENAI_CLIENT: Optional[genai.Client] = (
-        genai.Client(api_key=GEMINI_API_KEY) if GEMINI_API_KEY else genai.Client()
-    )
+    if GEMINI_API_KEY:
+        genai.configure(api_key=GEMINI_API_KEY)
+    GENAI_CLIENT = genai  # Use the module directly
 except Exception as exc:
     logger.warning("Failed to initialize Gemini client: %s", exc)
     GENAI_CLIENT = None
@@ -127,10 +130,8 @@ def _run_pipeline(
 
     transcript = WHISPER_MODEL.transcribe(str(recording))["text"]
     combined_prompt = _build_prompt(transcript)
-    response = GENAI_CLIENT.models.generate_content(
-        model="gemini-2.5-flash",
-        contents=combined_prompt,
-    )
+    model = GENAI_CLIENT.GenerativeModel("gemini-2.5-flash")
+    response = model.generate_content(combined_prompt)
     return transcript, response
 
 

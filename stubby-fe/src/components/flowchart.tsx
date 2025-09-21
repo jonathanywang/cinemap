@@ -17,320 +17,8 @@ import ReactFlow, {
   useOnSelectionChange,
 } from 'reactflow';
 import 'reactflow/dist/style.css';
-import { StoryNode, Flowchart } from '../types';
-
-interface MermaidNode {
-  id: string;
-  label: string;
-  actNumber?: 1 | 2 | 3;
-}
-
-interface MermaidEdge {
-  source: string;
-  target: string;
-  label?: string;
-}
-
-interface MermaidParseResult {
-  nodes: MermaidNode[];
-  edges: MermaidEdge[];
-}
-
-const parseMermaidFlowchart = (mermaidText: string): MermaidParseResult => {
-  const lines = mermaidText
-    .split('\n')
-    .map(line => line.trim())
-    .filter(line => line && !line.startsWith('%%') && !line.startsWith('flowchart') && !line.startsWith('graph'));
-
-  const nodes: MermaidNode[] = [];
-  const edges: MermaidEdge[] = [];
-  const nodeMap = new Map<string, string>();
-
-  lines.forEach(line => {
-    // Handle node definitions with labels - comprehensive regex for all mermaid node types
-    // Updated to better handle complex labels with colons, long text, and ellipsis
-    const nodeDefMatch = line.match(/(\w+)\[([^\]]+)\]|(\w+)\(([^)]+)\)|(\w+)\(\(([^)]+)\)\)|(\w+)\{([^}]+)\}|(\w+)>([^<]+)<|(\w+)\/([^/]+)\/|(\w+)\("([^"]+)"\)|(\w+)\[\[([^\]]+)\]\]/);
-    if (nodeDefMatch) {
-      // Extract node ID and label from the matched groups
-      let nodeId: string | undefined, label: string | undefined;
-      for (let i = 1; i < nodeDefMatch.length; i += 2) {
-        if (nodeDefMatch[i] && nodeDefMatch[i + 1]) {
-          nodeId = nodeDefMatch[i];
-          label = nodeDefMatch[i + 1];
-          break;
-        }
-      }
-
-      // Handle cases where there's no label captured (just node ID)
-      if (!nodeId && !label) {
-        for (let i = 1; i < nodeDefMatch.length; i++) {
-          if (nodeDefMatch[i] && !nodeDefMatch[i + 1]) {
-            nodeId = nodeDefMatch[i];
-            label = nodeDefMatch[i];
-            break;
-          }
-        }
-      }
-
-      if (nodeId && label) {
-        nodeMap.set(nodeId, label);
-        if (!nodes.find(n => n.id === nodeId)) {
-          // Extract act number from label if present (e.g., "Act 1: Title", "Act I: Title", "Act 2", etc.)
-          let actNumber: 1 | 2 | 3 | undefined;
-          const actMatch = label.match(/Act\s*([I1]|II|2|III|3)(?:\s*:|\s|$)/i);
-          if (actMatch) {
-            const actStr = actMatch[1].toUpperCase();
-            if (actStr === 'I' || actStr === '1') actNumber = 1;
-            else if (actStr === 'II' || actStr === '2') actNumber = 2;
-            else if (actStr === 'III' || actStr === '3') actNumber = 3;
-          }
-
-          // Clean up the label by removing the act prefix and handling truncated labels
-          let cleanLabel = label.replace(/^Act\s*([I1]|II|2|III|3)(?:\s*:\s*|\s+)/i, '');
-
-          // Handle truncated labels (those ending with ...)
-          if (cleanLabel.includes('...')) {
-            // Extract the main part before the ellipsis and clean it up
-            cleanLabel = cleanLabel.replace(/\.\.\..*$/, '').trim();
-            // Add ellipsis back if the label was actually truncated
-            if (cleanLabel.length > 0) {
-              cleanLabel += '...';
-            }
-          }
-
-          // Clean up common prefixes and formatting
-          cleanLabel = cleanLabel.replace(/^(Start:|End:|Complete:|Process:)\s*/i, '');
-
-          nodes.push({
-            id: nodeId,
-            label: cleanLabel || label, // fallback to original label if cleaning results in empty string
-            actNumber
-          });
-        }
-      }
-    }
-
-    // Handle connections with labels - comprehensive regex for all mermaid connection types
-    // Enhanced to handle conditional labels like |Yes| and |No| and various arrow types
-    const connectionMatch = line.match(/(\w+)\s*(-{1,3}>|={1,3}>|\.{1,3}->|-\.{1,3}->|<-{1,3}>|<-{1,3}|x-{1,3}x|o-{1,3}o|\|-{1,3}\||~{1,3}~)\s*(?:\|([^|]*)\|)?\s*(\w+)/);
-    if (connectionMatch) {
-      const source = connectionMatch[1];
-      const connector = connectionMatch[2];
-      const edgeLabel = connectionMatch[3]?.trim();
-      const target = connectionMatch[4];
-
-      if (source && target) {
-        // Add nodes if they don't exist
-        [source, target].forEach(nodeId => {
-          if (!nodeMap.has(nodeId) && !nodes.find(n => n.id === nodeId)) {
-            nodeMap.set(nodeId, nodeId);
-            nodes.push({ id: nodeId, label: nodeId });
-          }
-        });
-
-        edges.push({
-          source,
-          target,
-          label: edgeLabel && edgeLabel.length > 0 ? edgeLabel : undefined
-        });
-      }
-    }
-  });
-
-  return { nodes, edges };
-};
-
-const convertMermaidToStoryNodes = (mermaidResult: MermaidParseResult): StoryNode[] => {
-  // Create a map to track parent relationships
-  const parentMap = new Map<string, string>();
-  mermaidResult.edges.forEach(edge => {
-    parentMap.set(edge.target, edge.source);
-  });
-
-  // Helper function to infer act number based on flow hierarchy and keywords
-  const inferActNumber = (node: MermaidNode, nodeLevel: number, maxLevel: number): 1 | 2 | 3 => {
-    if (node.actNumber) return node.actNumber;
-
-    // Try to infer from label keywords first
-    const label = node.label.toLowerCase();
-    if (label.includes('opening') || label.includes('introduction') || label.includes('setup') ||
-        label.includes('beginning') || label.includes('start') || label.includes('inciting')) {
-      return 1;
-    }
-    if (label.includes('climax') || label.includes('resolution') || label.includes('ending') ||
-        label.includes('conclusion') || label.includes('finale') || label.includes('denouement')) {
-      return 3;
-    }
-    if (label.includes('conflict') || label.includes('rising') || label.includes('development') ||
-        label.includes('action') || label.includes('confrontation') || label.includes('crisis')) {
-      return 2;
-    }
-
-    // Use flow hierarchy to determine act
-    if (maxLevel === 0) return 1; // Single level flowchart
-
-    const levelRatio = nodeLevel / maxLevel;
-    if (levelRatio <= 0.3) return 1;       // First 30% of levels = Act 1
-    if (levelRatio >= 0.7) return 3;       // Last 30% of levels = Act 3
-    return 2;                              // Middle levels = Act 2
-  };
-
-  // Calculate hierarchical layout positions
-  const calculateHierarchicalPositions = (nodes: MermaidNode[], edges: MermaidEdge[]) => {
-    const positions = new Map<string, { x: number; y: number }>();
-    const visited = new Set<string>();
-    const childrenMap = new Map<string, string[]>();
-    const levelMap = new Map<string, number>();
-
-    // Build children map
-    edges.forEach(edge => {
-      if (!childrenMap.has(edge.source)) {
-        childrenMap.set(edge.source, []);
-      }
-      childrenMap.get(edge.source)!.push(edge.target);
-    });
-
-    // Find root nodes (nodes with no parents)
-    const rootNodes = nodes.filter(node => !parentMap.has(node.id));
-
-    // If no clear roots, use the first few nodes as roots
-    if (rootNodes.length === 0) {
-      rootNodes.push(nodes[0]);
-    }
-
-    // Calculate levels using BFS
-    const queue = rootNodes.map(node => ({ id: node.id, level: 0 }));
-
-    while (queue.length > 0) {
-      const { id, level } = queue.shift()!;
-
-      if (visited.has(id)) continue;
-      visited.add(id);
-      levelMap.set(id, level);
-
-      const children = childrenMap.get(id) || [];
-      children.forEach(childId => {
-        if (!visited.has(childId)) {
-          queue.push({ id: childId, level: level + 1 });
-        }
-      });
-    }
-
-    // Group nodes by level
-    const levelGroups = new Map<number, string[]>();
-    nodes.forEach(node => {
-      const level = levelMap.get(node.id) || 0;
-      if (!levelGroups.has(level)) {
-        levelGroups.set(level, []);
-      }
-      levelGroups.get(level)!.push(node.id);
-    });
-
-    // Calculate positions with improved hierarchical layout
-    const nodeWidth = 300;
-    const nodeHeight = 120;
-    const levelHeight = 180;
-    const minSpacing = 50;
-
-    levelGroups.forEach((nodeIds, level) => {
-      const nodesInLevel = nodeIds.length;
-
-      if (nodesInLevel === 1) {
-        // Single node - center it
-        positions.set(nodeIds[0], { x: 400, y: level * levelHeight + 100 });
-      } else {
-        // Multiple nodes - distribute evenly with adequate spacing
-        const totalRequiredWidth = (nodesInLevel - 1) * Math.max(nodeWidth, 250);
-        const startX = 400 - totalRequiredWidth / 2;
-
-        nodeIds.forEach((nodeId, indexInLevel) => {
-          const x = startX + (indexInLevel * Math.max(nodeWidth, 250));
-          const y = level * levelHeight + 100;
-
-          positions.set(nodeId, { x, y });
-        });
-      }
-    });
-
-    const maxLevelValue = Math.max(...Array.from(levelMap.values()), 0);
-    return { positions, levelMap, maxLevel: maxLevelValue };
-  };
-
-  const { positions, levelMap, maxLevel } = calculateHierarchicalPositions(mermaidResult.nodes, mermaidResult.edges);
-
-  // Prevent circular connections - detect cycles and remove them
-  const sanitizeConnections = (edges: MermaidEdge[]) => {
-    const visited = new Set<string>();
-    const recursionStack = new Set<string>();
-    const validEdges: MermaidEdge[] = [];
-
-    const hasCycle = (nodeId: string, currentPath: Set<string>): boolean => {
-      if (currentPath.has(nodeId)) return true;
-      if (visited.has(nodeId)) return false;
-
-      visited.add(nodeId);
-      currentPath.add(nodeId);
-
-      const children = edges.filter(e => e.source === nodeId);
-      for (const edge of children) {
-        if (hasCycle(edge.target, currentPath)) {
-          return true;
-        }
-      }
-
-      currentPath.delete(nodeId);
-      return false;
-    };
-
-    // Check each edge for cycles
-    for (const edge of mermaidResult.edges) {
-      const tempEdges = [...validEdges, edge];
-      visited.clear();
-
-      let createsCycle = false;
-      for (const node of mermaidResult.nodes) {
-        if (!visited.has(node.id)) {
-          if (hasCycle(node.id, new Set())) {
-            createsCycle = true;
-            break;
-          }
-        }
-      }
-
-      if (!createsCycle) {
-        validEdges.push(edge);
-      }
-    }
-
-    return validEdges;
-  };
-
-  const sanitizedEdges = sanitizeConnections(mermaidResult.edges);
-
-  // Rebuild parent map with sanitized edges
-  const sanitizedParentMap = new Map<string, string>();
-  sanitizedEdges.forEach(edge => {
-    sanitizedParentMap.set(edge.target, edge.source);
-  });
-
-  // Create nodes with act numbers based on hierarchy level
-  const nodesWithActs = mermaidResult.nodes.map((node, index) => ({
-    id: node.id,
-    story_id: 'mermaid-import',
-    act_number: inferActNumber(node, levelMap.get(node.id) || 0, maxLevel),
-    title: node.label,
-    summary: `Imported from Mermaid`,
-    details: '',
-    parent_node_id: sanitizedParentMap.get(node.id),
-    position: positions.get(node.id) || {
-      x: 300 * (index % 3) + 250,
-      y: 180 * Math.floor(index / 3) + 100
-    }
-  }));
-
-  // Return nodes with original mermaid structure preserved
-  return nodesWithActs;
-};
+import { StoryNode } from '../types';
+import { parseMermaidFlowchart, convertMermaidToStoryNodes } from '../utils/mermaid';
 
 interface FlowchartViewProps {
   nodes: StoryNode[];
@@ -350,7 +38,7 @@ interface NodeFormData {
 const getActColor = (actNumber: 1 | 2 | 3): string => {
   switch (actNumber) {
     case 1: return '#3B82F6'; // blue
-    case 2: return '#EAB308'; // yellow  
+    case 2: return '#EAB308'; // yellow
     case 3: return '#EF4444'; // red
     default: return '#6B7280'; // gray
   }
@@ -359,7 +47,7 @@ const getActColor = (actNumber: 1 | 2 | 3): string => {
 const FlowchartViewInner: React.FC<FlowchartViewProps> = ({ nodes: storyNodes, onNodeClick, onNodesChange, onMermaidImport }) => {
   const reactFlowInstance = useReactFlow();
   const connectingNodeId = useRef<string | null>(null);
-  
+
   // Modal states
   const [isAddNodeModalOpen, setIsAddNodeModalOpen] = useState(false);
   const [isEditNodeModalOpen, setIsEditNodeModalOpen] = useState(false);
@@ -368,7 +56,7 @@ const FlowchartViewInner: React.FC<FlowchartViewProps> = ({ nodes: storyNodes, o
   const [selectedNodes, setSelectedNodes] = useState<string[]>([]);
   const [selectedEdges, setSelectedEdges] = useState<string[]>([]);
   const [mermaidText, setMermaidText] = useState('');
-  
+
   // Form states
   const [nodeForm, setNodeForm] = useState<NodeFormData>({
     title: '',
@@ -376,7 +64,7 @@ const FlowchartViewInner: React.FC<FlowchartViewProps> = ({ nodes: storyNodes, o
     details: '',
     act_number: 1
   });
-  
+
   const [newNodePosition, setNewNodePosition] = useState({ x: 0, y: 0 });
 
   // Convert StoryNode to ReactFlow Node format
@@ -494,7 +182,7 @@ const FlowchartViewInner: React.FC<FlowchartViewProps> = ({ nodes: storyNodes, o
       x: event.clientX,
       y: event.clientY,
     });
-    
+
     setNewNodePosition(position);
   }, [reactFlowInstance]);
 
@@ -504,7 +192,7 @@ const FlowchartViewInner: React.FC<FlowchartViewProps> = ({ nodes: storyNodes, o
       x: event.clientX,
       y: event.clientY,
     });
-    
+
     setNewNodePosition(position);
     setIsAddNodeModalOpen(true);
   }, [reactFlowInstance]);
@@ -545,8 +233,8 @@ const FlowchartViewInner: React.FC<FlowchartViewProps> = ({ nodes: storyNodes, o
     };
 
     const updatedReactFlowNode = convertToReactFlowNode(updatedStoryNode);
-    setNodes((nds) => 
-      nds.map((node) => 
+    setNodes((nds) =>
+      nds.map((node) =>
         node.id === editingNode.id ? updatedReactFlowNode : node
       )
     );
@@ -554,7 +242,7 @@ const FlowchartViewInner: React.FC<FlowchartViewProps> = ({ nodes: storyNodes, o
 
     // Notify parent component
     if (onNodesChange) {
-      const updatedStoryNodes = storyNodes.map(node => 
+      const updatedStoryNodes = storyNodes.map(node =>
         node.id === editingNode.id ? updatedStoryNode : node
       );
       onNodesChange(updatedStoryNodes);
@@ -563,11 +251,11 @@ const FlowchartViewInner: React.FC<FlowchartViewProps> = ({ nodes: storyNodes, o
 
   const handleDeleteSelected = useCallback(() => {
     if (selectedNodes.length === 0 && selectedEdges.length === 0) return;
-    
+
     if (window.confirm(`Are you sure you want to delete ${selectedNodes.length} node(s) and ${selectedEdges.length} edge(s)?`)) {
       setNodes((nds) => nds.filter((node) => !selectedNodes.includes(node.id)));
       setEdges((eds) => eds.filter((edge) => !selectedEdges.includes(edge.id)));
-      
+
       // Notify parent component
       if (onNodesChange) {
         const updatedStoryNodes = storyNodes.filter(node => !selectedNodes.includes(node.id));
@@ -705,7 +393,7 @@ const FlowchartViewInner: React.FC<FlowchartViewProps> = ({ nodes: storyNodes, o
           <div className="bg-white rounded-lg p-6 w-full max-w-md mx-4">
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-lg font-semibold text-gray-900">Add New Node</h3>
-              <button 
+              <button
                 onClick={closeAddNodeModal}
                 className="text-gray-400 hover:text-gray-600"
               >
@@ -788,7 +476,7 @@ const FlowchartViewInner: React.FC<FlowchartViewProps> = ({ nodes: storyNodes, o
           <div className="bg-white rounded-lg p-6 w-full max-w-md mx-4">
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-lg font-semibold text-gray-900">Edit Node</h3>
-              <button 
+              <button
                 onClick={closeEditNodeModal}
                 className="text-gray-400 hover:text-gray-600"
               >
@@ -887,7 +575,7 @@ const FlowchartViewInner: React.FC<FlowchartViewProps> = ({ nodes: storyNodes, o
                   Mermaid Flowchart
                 </label>
                 <p className="text-xs text-gray-500 mb-2">
-                  Paste your Mermaid flowchart syntax. Supports node definitions like A[Label], connections like A {'->'} B, and act numbers (Act 1, Act I, etc.)
+                  Paste your Mermaid flowchart syntax. Supports node definitions like A[Label], connections like A --> B, and act numbers (Act 1, Act I, etc.)
                 </p>
                 <textarea
                   value={mermaidText}
