@@ -378,13 +378,13 @@ const FlowchartViewInner: React.FC<FlowchartViewProps> = ({ nodes: storyNodes, o
         >
           + Node
         </button>
-        <button
+        {/* <button
           onClick={() => setIsMermaidImportModalOpen(true)}
           className="px-3 py-2 bg-green-500 text-white rounded hover:bg-green-600 transition-colors text-sm"
           title="Import from Mermaid"
         >
           Import Mermaid
-        </button>
+        </button> */}
         <button
           onClick={handleDeleteSelected}
           disabled={selectedNodes.length === 0 && selectedEdges.length === 0}

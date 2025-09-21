@@ -115,6 +115,97 @@ const MainApp: React.FC = () => {
             created_at: new Date().toISOString()
         };
         setSelectedStory(story);
+
+        // Map stories to their corresponding flowcharts
+        const storyToFlowchartMap: { [key: string]: string } = {
+            '1': 'customer-support',
+            '2': 'research-analysis', 
+            '3': 'project-management'
+        };
+
+        // Determine which flowchart to activate based on story
+        let targetFlowchartId = storyToFlowchartMap[storyId];
+        
+        // If no specific mapping exists (for new stories), create or find an available flowchart
+        if (!targetFlowchartId) {
+            // For new stories, try to find an existing flowchart or use the first available one
+            const existingFlowchart = flowcharts.find(f => f.title.includes(story.title));
+            targetFlowchartId = existingFlowchart?.id || flowcharts[0]?.id || 'customer-support';
+        }
+
+        // Set the active flowchart
+        setActiveFlowchartId(targetFlowchartId);
+
+        // Load unique mermaid data for this specific story/flowchart combination
+        loadUniqueStoryContent(storyId, targetFlowchartId);
+    };
+
+    // Load unique mermaid content for each story - make individual API calls
+    const loadUniqueStoryContent = async (storyId: string, flowchartId: string) => {
+        try {
+            // Define unique prompts/contexts for each story to get different mermaid outputs
+            const storyPrompts: { [key: string]: string } = {
+                '1': 'customer service workflow with escalation paths and customer satisfaction tracking',
+                '2': 'research and data analysis process with validation steps and reporting phases', 
+                '3': 'project management workflow with team collaboration and milestone tracking',
+                'default': 'creative story development with character arcs'
+            };
+
+            const prompt = storyPrompts[storyId] || storyPrompts['default'];
+            
+            const response = await fetch('http://localhost:8000/api/test/mermaid/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    description: `Generate a detailed mermaid flowchart for: ${prompt}`,
+                    story_id: storyId,
+                    flowchart_id: flowchartId
+                }),
+            });
+
+            const data = await response.json();
+            
+            if (data.success && data.mermaid_code) {
+                const mermaidResult = parseMermaidFlowchart(data.mermaid_code);
+                const storyNodes = convertMermaidToStoryNodes(mermaidResult);
+                
+                // Update the specific flowchart with unique content
+                setFlowcharts(prevFlowcharts => 
+                    prevFlowcharts.map(flowchart => 
+                        flowchart.id === flowchartId
+                            ? { 
+                                ...flowchart, 
+                                nodes: storyNodes, 
+                                title: `Story ${storyId}`,
+                                description: `${prompt}`,
+                                updated_at: new Date().toISOString()
+                            }
+                            : flowchart
+                    )
+                );
+
+                console.log(`Loaded unique content for Story ${storyId} -> Flowchart ${flowchartId}:`, storyNodes);
+            }
+        } catch (error) {
+            console.error(`Error loading content for Story ${storyId}:`, error);
+        }
+    };
+
+    // Load all three stories with separate API calls
+    const loadAllStories = async () => {
+        try {
+            // Make 3 separate API calls for each story-flowchart combination
+            await Promise.all([
+                loadUniqueStoryContent('1', 'customer-support'),
+                loadUniqueStoryContent('2', 'research-analysis'),
+                loadUniqueStoryContent('3', 'project-management')
+            ]);
+            console.log('All stories loaded with unique content');
+        } catch (error) {
+            console.error('Error loading all stories:', error);
+        }
     };
 
     const handleCreateProject = (name: string) => {
@@ -163,95 +254,17 @@ const MainApp: React.FC = () => {
         setSelectedNode(node);
     };
 
-    // API functions to fetch stories from backend
+    // API functions to fetch stories from backend - each makes individual API call
     const fetchStory1 = async () => {
-        try {
-            const response = await fetch('http://localhost:8000/api/test/mermaid/', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                    description: 'Create a movie plot flowchart for a superhero origin story with character development, mentor meeting, villain confrontation, and final battle with multiple branching paths for different outcomes.'
-                })
-            });
-
-            const data = await response.json();
-
-            if (data.success && data.mermaid_code) {
-                const mermaidResult = parseMermaidFlowchart(data.mermaid_code);
-                const storyNodes = convertMermaidToStoryNodes(mermaidResult);
-
-                // Update Story 1 flowchart
-                setFlowcharts(prev => prev.map(flowchart =>
-                    flowchart.id === 'customer-support'
-                        ? { ...flowchart, nodes: storyNodes, title: 'Story 1' }
-                        : flowchart
-                ));
-            }
-        } catch (error) {
-            console.error('Error fetching Story 1:', error);
-        }
+        await loadUniqueStoryContent('1', 'customer-support');
     };
 
     const fetchStory2 = async () => {
-        try {
-            const response = await fetch('http://localhost:8000/api/test/mermaid/', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                    description: 'Design a romantic comedy plot structure with meet-cute, misunderstanding, separation, and reunion scenes with branching paths for different relationship outcomes.'
-                })
-            });
-
-            const data = await response.json();
-
-            if (data.success && data.mermaid_code) {
-                const mermaidResult = parseMermaidFlowchart(data.mermaid_code);
-                const storyNodes = convertMermaidToStoryNodes(mermaidResult);
-
-                // Update Story 2 flowchart
-                setFlowcharts(prev => prev.map(flowchart =>
-                    flowchart.id === 'software-development'
-                        ? { ...flowchart, nodes: storyNodes, title: 'Story 2' }
-                        : flowchart
-                ));
-            }
-        } catch (error) {
-            console.error('Error fetching Story 2:', error);
-        }
+        await loadUniqueStoryContent('2', 'research-analysis');
     };
 
     const fetchStory3 = async () => {
-        try {
-            const response = await fetch('http://localhost:8000/api/test/mermaid/', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                    description: 'Create a thriller heist movie flowchart with team assembly, planning phase, execution, complications, and escape sequences with multiple branching outcomes.'
-                })
-            });
-
-            const data = await response.json();
-
-            if (data.success && data.mermaid_code) {
-                const mermaidResult = parseMermaidFlowchart(data.mermaid_code);
-                const storyNodes = convertMermaidToStoryNodes(mermaidResult);
-
-                // Update Story 3 flowchart
-                setFlowcharts(prev => prev.map(flowchart =>
-                    flowchart.id === 'order-processing'
-                        ? { ...flowchart, nodes: storyNodes, title: 'Story 3' }
-                        : flowchart
-                ));
-            }
-        } catch (error) {
-            console.error('Error fetching Story 3:', error);
-        }
+        await loadUniqueStoryContent('3', 'project-management');
     };
 
     const handleFlowchartChange = (flowchartId: string) => {
@@ -622,7 +635,7 @@ const MainApp: React.FC = () => {
             updated_at: new Date().toISOString()
         },
         {
-            id: 'software-development',
+            id: 'research-analysis',
             title: 'Story 2',
             description: 'Story idea #2',
             nodes: [],
@@ -751,7 +764,7 @@ const MainApp: React.FC = () => {
             updated_at: new Date().toISOString()
         },
         {
-            id: 'order-processing',
+            id: 'project-management',
             title: 'Story 3',
             description: 'Story idea #3',
             nodes: [],
@@ -880,6 +893,19 @@ const MainApp: React.FC = () => {
             updated_at: new Date().toISOString()
         }
     ]);
+
+    // Initialize all stories with unique content on component mount
+    useEffect(() => {
+        const initializeStories = async () => {
+            console.log('Initializing all stories with unique content...');
+            await loadAllStories();
+        };
+        
+        // Only initialize once when component mounts and flowcharts are ready
+        if (flowcharts.length > 0) {
+            initializeStories();
+        }
+    }, [flowcharts.length]); // Depend on flowcharts being ready
 
     // Get current flowchart nodes
     const currentFlowchart = flowcharts.find(f => f.id === activeFlowchartId);
