@@ -58,7 +58,7 @@ const LandingPage: React.FC = () => {
                                 />
 
                                 <SplitText
-                                    text="From stories to branching plots and cinematic arcs, Narratree redefines and accelerates your creative process."
+                                    text="From stories to branching plots and cinematic arcs, CineMap redefines and accelerates your creative process."
                                     tag="p"
                                     className="text-2xl font-medium text-blue-100 mb-10 leading-relaxed max-w-xl drop-shadow-[0_3px_8px_rgba(0,0,0,0.8)] tracking-wide"
                                     delay={30}
@@ -348,7 +348,7 @@ const LandingPage: React.FC = () => {
                 </div>
             </section>
 
-            {/* Second Screen - What is Narratree? */}
+            {/* Second Screen - What is CineMap? */}
             <section id="how-it-works" className="relative h-screen flex items-center justify-center bg-white px-4 py-8 overflow-hidden">
                 {/* Background flowcharts outside container */}
                 <div className="absolute inset-0 pointer-events-none opacity-20">
@@ -502,7 +502,7 @@ const LandingPage: React.FC = () => {
                         <div className="max-w-5xl mx-auto text-center relative z-20">
                             <div className="mb-12">
                                 <BlurText
-                                    text="What's Narratree?"
+                                    text="What's CineMap?"
                                     delay={90}
                                     animateBy="words"
                                     direction="top"
@@ -511,7 +511,7 @@ const LandingPage: React.FC = () => {
                             </div>
                             <div className="space-y-12 text-2xl md:text-2xl text-gray-600 text-center">
                                 <BlurText
-                                    text="Narratree is an AI-powered writing assistant that helps you craft compelling narratives through interactive flowcharts and intelligent suggestions. Our platform combines the structure of traditional storytelling with modern AI technology to enhance your creative process."
+                                    text="CineMap is an AI-powered writing assistant that helps you craft compelling narratives through interactive flowcharts and intelligent suggestions. Our platform combines the structure of traditional storytelling with modern AI technology to enhance your creative process."
                                     delay={90}
                                     animateBy="words"
                                     direction="top"
@@ -558,7 +558,7 @@ const LandingPage: React.FC = () => {
                                     rotationEnd="+=220"
                                     wordAnimationEnd="+=220"
                                 >
-                                    Everyone has a story to tell. Narratree is built to make the writing process more intuitive and
+                                    Everyone has a story to tell. CineMap is built to make the writing process more intuitive and
                                     accessible through visual storytelling and AI assistance.
                                 </ScrollReveal>
                                                                 <ScrollReveal
