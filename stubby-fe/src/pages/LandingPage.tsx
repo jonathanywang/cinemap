@@ -582,7 +582,7 @@ const LandingPage: React.FC = () => {
             {/* Footer */}
             <footer className="pt-0 pb-16 px-6 bg-white">
                 <div className="max-w-7xl mx-auto text-center">
-                    <p className="text-2xl font-light text-gray-600 tracking-wide">
+                    <p className="text-2l font-light text-gray-300 tracking-wide">
                         created at BigRedHacks 2025
                     </p>
                 </div>
