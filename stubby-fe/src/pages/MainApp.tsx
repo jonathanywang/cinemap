@@ -496,7 +496,9 @@ const MainApp: React.FC = () => {
             id: 'customer-support',
             title: 'Story 1',
             description: 'Story idea #1',
-            nodes: [
+            nodes: [],
+            // Commented out hardcoded nodes - will be populated by API
+            /* nodes: [
         {
             id: 'A',
             story_id: selectedStory?.id || '',
@@ -615,7 +617,7 @@ const MainApp: React.FC = () => {
             parent_node_id: 'K',
             position: { x: 700, y: 650 }
         }
-            ],
+            ], */
             created_at: new Date().toISOString(),
             updated_at: new Date().toISOString()
         },
@@ -623,7 +625,9 @@ const MainApp: React.FC = () => {
             id: 'software-development',
             title: 'Story 2',
             description: 'Story idea #2',
-            nodes: [
+            nodes: [],
+            // Commented out hardcoded nodes - will be populated by API
+            /* nodes: [
                 {
                     id: 'REQ',
                     story_id: selectedStory?.id || '',
@@ -742,7 +746,7 @@ const MainApp: React.FC = () => {
                     parent_node_id: 'DESKTEST',
                     position: { x: 700, y: 650 }
                 }
-            ],
+            ], */
             created_at: new Date().toISOString(),
             updated_at: new Date().toISOString()
         },
@@ -750,7 +754,9 @@ const MainApp: React.FC = () => {
             id: 'order-processing',
             title: 'Story 3',
             description: 'Story idea #3',
-            nodes: [
+            nodes: [],
+            // Commented out hardcoded nodes - will be populated by API
+            /* nodes: [
                 {
                     id: 'BROWSE',
                     story_id: selectedStory?.id || '',
@@ -869,7 +875,7 @@ const MainApp: React.FC = () => {
                     parent_node_id: 'REGPAY',
                     position: { x: 700, y: 650 }
                 }
-            ],
+            ], */
             created_at: new Date().toISOString(),
             updated_at: new Date().toISOString()
         }
@@ -945,6 +951,8 @@ const MainApp: React.FC = () => {
     ];
 
     // Load stories from API on component mount
+    // Commented out - API calls will be triggered manually instead
+    /*
     useEffect(() => {
         const loadAllStories = async () => {
             try {
@@ -961,6 +969,7 @@ const MainApp: React.FC = () => {
 
         loadAllStories();
     }, []);
+    */
 
     return (
         <div className="h-screen flex bg-background">
