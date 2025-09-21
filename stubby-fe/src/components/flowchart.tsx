@@ -575,7 +575,7 @@ const FlowchartViewInner: React.FC<FlowchartViewProps> = ({ nodes: storyNodes, o
                   Mermaid Flowchart
                 </label>
                 <p className="text-xs text-gray-500 mb-2">
-                  Paste your Mermaid flowchart syntax. Supports node definitions like A[Label], connections like A --> B, and act numbers (Act 1, Act I, etc.)
+                  Paste your Mermaid flowchart syntax. Supports node definitions like A[Label], connections like A --&gt; B, and act numbers (Act 1, Act I, etc.)
                 </p>
                 <textarea
                   value={mermaidText}
