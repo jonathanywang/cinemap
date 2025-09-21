@@ -61,7 +61,7 @@ const Header: React.FC<HeaderProps> = ({ variant = 'app' }) => {
                                 Our Mission
                             </button>
                             
-                            <div className="w-px h-4 bg-gray-600" />
+                            <div className="w-px h-4 bg-gray-500/75" />
                             
                             <button
                                 onClick={() => navigate('/app')}
