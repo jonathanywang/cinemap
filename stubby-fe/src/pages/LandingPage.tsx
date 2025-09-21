@@ -58,7 +58,7 @@ const LandingPage: React.FC = () => {
                                 />
 
                                 <SplitText
-                                    text="From stories to branching plots to cinematic arcs, Narratree refines and accelerates your creative process."
+                                    text="From stories to branching plots and cinematic arcs, Narratree redefines and accelerates your creative process."
                                     tag="p"
                                     className="text-2xl font-medium text-blue-100 mb-10 leading-relaxed max-w-xl drop-shadow-[0_3px_8px_rgba(0,0,0,0.8)] tracking-wide"
                                     delay={30}
@@ -550,7 +550,7 @@ const LandingPage: React.FC = () => {
                             </ScrollReveal>
                             <div className="space-y-10 text-xl text-gray-200 mb-12">
                                 <ScrollReveal
-                                    textClassName="sr-inherit text-lg font-light text-blue-50 leading-loose text-left drop-shadow-[0_3px_8px_rgba(0,0,0,0.7)] tracking-wide"
+                                    textClassName="sr-inherit text-lg font-light text-blue-50 leading-loose text-center drop-shadow-[0_3px_8px_rgba(0,0,0,0.7)] tracking-wide"
                                     containerClassName="leading-loose"
                                     baseOpacity={0.1}
                                     baseRotation={2}
@@ -561,8 +561,8 @@ const LandingPage: React.FC = () => {
                                     Everyone has a story to tell. Narratree is built to make the writing process more intuitive and
                                     accessible through visual storytelling and AI assistance.
                                 </ScrollReveal>
-                                <ScrollReveal
-                                    textClassName="sr-inherit text-lg font-light text-blue-50 leading-loose text-left drop-shadow-[0_3px_8px_rgba(0,0,0,0.7)] tracking-wide"
+                                                                <ScrollReveal
+                                    textClassName="sr-inherit text-lg font-light text-blue-50 leading-loose text-center drop-shadow-[0_3px_8px_rgba(0,0,0,0.7)] tracking-wide"
                                     containerClassName="leading-loose"
                                     baseOpacity={0.1}
                                     baseRotation={2}
@@ -570,7 +570,7 @@ const LandingPage: React.FC = () => {
                                     rotationEnd="+=220"
                                     wordAnimationEnd="+=220"
                                 >
-                                    Whether you’re a professional facing writer’s block or an indie creator shaping your first draft, our goal is to help you move past
+                                    Whether you're a professional facing writer's block or an indie creator shaping your first draft, our goal is to help you move past
                                     creative roadblocks, organize your ideas, and accelerate the journey from concept to finished narrative.
                                 </ScrollReveal>
                             </div>
@@ -578,6 +578,15 @@ const LandingPage: React.FC = () => {
                     </div>
                 </div>
             </section>
+
+            {/* Footer */}
+            <footer className="pt-0 pb-16 px-6 bg-white">
+                <div className="max-w-7xl mx-auto text-center">
+                    <p className="text-2xl font-light text-gray-600 tracking-wide">
+                        created at BigRedHacks 2025
+                    </p>
+                </div>
+            </footer>
         </div>
     );
 };
