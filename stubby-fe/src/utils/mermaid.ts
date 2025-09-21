@@ -30,7 +30,7 @@ export const parseMermaidFlowchart = (mermaidText: string): MermaidParseResult =
   lines.forEach(line => {
     // Enhanced regex to handle all mermaid node types including:
     // [text], (text), ((text)), {text}, >text<, /text/, "text", [[text]], [(text)], [/text/]
-    const nodeDefMatch = line.match(/(\w+)(?:\[([^\]]+)\]|\("([^"]+)"\)|\(([^)]+)\)|\(\(([^)]+)\)\)|\{([^}]+)\}|>([^<]+)<|\/([^\/]+)\/|\[\[([^\]]+)\]\]|\[\/([^\/]+)\/\]|\[\(([^)]+)\)\])/);
+    const nodeDefMatch = line.match(/(\w+)(?:\[([^\]]+)\]|\("([^"]+)"\)|\(([^)]+)\)|\(\(([^)]+)\)\)|\{([^}]+)\}|>([^<]+)<|\/([^/]+)\/|\[\[([^\]]+)\]\]|\[\/([^/]+)\/\]|\[\(([^)]+)\)\])/);
 
     if (nodeDefMatch) {
       const nodeId = nodeDefMatch[1];
@@ -85,7 +85,6 @@ export const parseMermaidFlowchart = (mermaidText: string): MermaidParseResult =
 
     if (connectionMatch) {
       const source = connectionMatch[1];
-      const connector = connectionMatch[2];
       const inlineLabel = connectionMatch[3] || connectionMatch[4]; // For --label--> or ==label==> style
       const pipeLabel = connectionMatch[5]; // For |label| style
       const target = connectionMatch[6];
@@ -94,11 +93,12 @@ export const parseMermaidFlowchart = (mermaidText: string): MermaidParseResult =
       const edgeLabel = (pipeLabel || inlineLabel)?.trim();
 
       if (source && target) {
-        // Add nodes if they don't exist (for cases where connections are defined before nodes)
+        // Only add nodes if they were explicitly defined with brackets/braces
+        // Don't create nodes for connection-only references
         [source, target].forEach(nodeId => {
           if (!nodeMap.has(nodeId) && !nodes.find(n => n.id === nodeId)) {
-            nodeMap.set(nodeId, nodeId);
-            nodes.push({ id: nodeId, label: nodeId });
+            // Skip creating nodes that are only referenced in connections
+            // These will be filtered out later
           }
         });
 
@@ -111,7 +111,16 @@ export const parseMermaidFlowchart = (mermaidText: string): MermaidParseResult =
     }
   });
 
-  return { nodes, edges };
+  // Filter out any nodes that weren't explicitly defined (only referenced in connections)
+  const validNodes = nodes.filter(node => nodeMap.has(node.id) && nodeMap.get(node.id) !== '');
+
+  // Filter edges to only include those between valid nodes
+  const validEdges = edges.filter(edge =>
+    validNodes.some(n => n.id === edge.source) &&
+    validNodes.some(n => n.id === edge.target)
+  );
+
+  return { nodes: validNodes, edges: validEdges };
 };
 
 export const convertMermaidToStoryNodes = (mermaidResult: MermaidParseResult): StoryNode[] => {
@@ -159,14 +168,14 @@ export const convertMermaidToStoryNodes = (mermaidResult: MermaidParseResult): S
       childrenMap.get(edge.source)!.push(edge.target);
     });
 
-    // Find root nodes (nodes with no parents)
-    const rootNodes = nodes.filter(node => !parentMap.has(node.id));
-    if (rootNodes.length === 0 && nodes.length > 0) {
-      rootNodes.push(nodes[0]);
+    // Find root nodes (nodes with no parents) for level calculation
+    const rootNodesForLevels = nodes.filter(node => !parentMap.has(node.id));
+    if (rootNodesForLevels.length === 0 && nodes.length > 0) {
+      rootNodesForLevels.push(nodes[0]);
     }
 
     // Calculate hierarchical levels using BFS
-    const queue = rootNodes.map(node => ({ id: node.id, level: 0 }));
+    const queue = rootNodesForLevels.map(node => ({ id: node.id, level: 0 }));
 
     while (queue.length > 0) {
       const { id, level } = queue.shift()!;
@@ -193,45 +202,30 @@ export const convertMermaidToStoryNodes = (mermaidResult: MermaidParseResult): S
       levelGroups.get(level)!.push(node.id);
     });
 
-    // Enhanced positioning algorithm
-    const nodeWidth = 200;
-    const nodeHeight = 100;
-    const levelHeight = 150;
-    const horizontalSpacing = 80;
-    const centerX = 400; // Center point for alignment
+    // Movie flowchart positioning algorithm - prevents overlap and follows hierarchy
+    const nodeWidth = 240;
+    const verticalSpacing = 150;
+    const horizontalSpacing = 140;
+    const centerX = 600;
 
+    // Position nodes level by level with proper spacing
     levelGroups.forEach((nodeIds, level) => {
-      const nodesInLevel = nodeIds.length;
+      // Sort nodes at each level alphabetically for consistent positioning
+      const sortedNodes = nodeIds.sort((a, b) => a.localeCompare(b));
+      const y = level * verticalSpacing + 80;
 
-      if (nodesInLevel === 1) {
+      if (sortedNodes.length === 1) {
         // Single node - center it
-        positions.set(nodeIds[0], { x: centerX, y: level * levelHeight + 50 });
+        positions.set(sortedNodes[0], { x: centerX, y });
       } else {
-        // Multiple nodes - distribute evenly around center
-        const totalWidth = (nodesInLevel - 1) * (nodeWidth + horizontalSpacing);
+        // Multiple nodes - distribute with enough spacing to prevent overlap
+        const totalWidth = (sortedNodes.length - 1) * (nodeWidth + horizontalSpacing);
         const startX = centerX - totalWidth / 2;
 
-        nodeIds.forEach((nodeId, index) => {
+        sortedNodes.forEach((nodeId, index) => {
           const x = startX + index * (nodeWidth + horizontalSpacing);
-          const y = level * levelHeight + 50;
-
           positions.set(nodeId, { x, y });
         });
-      }
-    });
-
-    // Handle positioning for nodes not yet positioned (isolated nodes)
-    let fallbackX = 100;
-    let fallbackY = 50;
-
-    nodes.forEach(node => {
-      if (!positions.has(node.id)) {
-        positions.set(node.id, { x: fallbackX, y: fallbackY });
-        fallbackX += nodeWidth + horizontalSpacing;
-        if (fallbackX > 800) {
-          fallbackX = 100;
-          fallbackY += levelHeight;
-        }
       }
     });
 

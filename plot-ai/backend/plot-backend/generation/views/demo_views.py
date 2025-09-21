@@ -186,22 +186,22 @@ def mermaid_demo(request):
         <div class="example-prompts">
             <h3>📝 Example Prompts (Click to Use)</h3>
             <div class="example-prompt" onclick="usePrompt(this)">
-                Create a flowchart for a user registration process with email verification, password validation, and account activation steps.
+                Create a movie plot flowchart for a superhero origin story with character development, mentor meeting, villain confrontation, and final battle.
             </div>
             <div class="example-prompt" onclick="usePrompt(this)">
-                Design a workflow for an e-commerce order processing system from cart to delivery, including payment validation and inventory checks.
+                Design a romantic comedy plot structure with meet-cute, misunderstanding, separation, and reunion scenes.
             </div>
             <div class="example-prompt" onclick="usePrompt(this)">
-                Generate a flowchart for a bug report handling process in software development, including triage, assignment, and resolution steps.
+                Generate a thriller movie flowchart with setup, inciting incident, rising tension, climax, and resolution including plot twists.
             </div>
             <div class="example-prompt" onclick="usePrompt(this)">
-                Create a decision tree for a customer support system with escalation paths and different types of inquiries.
+                Create a heist movie plot diagram with team assembly, planning phase, execution, complications, and escape sequences.
             </div>
         </div>
 
         <div class="form-group">
             <label for="description">Describe your flowchart:</label>
-            <textarea id="description" placeholder="Enter a detailed description of the process or workflow you want to visualize...">Create a flowchart for a Django web application user authentication system with login, registration, and password reset functionality.</textarea>
+            <textarea id="description" placeholder="Enter a detailed description of the movie plot or story structure you want to visualize...">Create a flowchart for a sci-fi movie about time travel with paradoxes, multiple timelines, and a race to prevent a catastrophic future.</textarea>
         </div>
 
         <button onclick="generateFlowchart()">🚀 Generate Flowchart</button>

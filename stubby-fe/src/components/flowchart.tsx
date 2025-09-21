@@ -87,8 +87,10 @@ const FlowchartViewInner: React.FC<FlowchartViewProps> = ({ nodes: storyNodes, o
       border: '2px solid #333',
       borderRadius: '8px',
       color: 'white',
-      width: 200,
-      fontSize: '12px'
+      width: 240,
+      height: 80,
+      fontSize: '12px',
+      padding: '8px'
     }
   });
 
@@ -310,6 +312,11 @@ const FlowchartViewInner: React.FC<FlowchartViewProps> = ({ nodes: storyNodes, o
         // Fallback: replace current nodes
         onNodesChange(storyNodes);
       }
+
+      // Auto-fit view after import with a slight delay to ensure nodes are rendered
+      setTimeout(() => {
+        reactFlowInstance.fitView({ padding: 0.1, duration: 800 });
+      }, 200);
 
       closeMermaidImportModal();
     } catch (error) {
@@ -582,7 +589,7 @@ const FlowchartViewInner: React.FC<FlowchartViewProps> = ({ nodes: storyNodes, o
                   onChange={(e) => setMermaidText(e.target.value)}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 font-mono text-sm"
                   rows={12}
-                  placeholder="Example:&#10;flowchart TD&#10;    A[Act 1: Opening Scene] --> B[Inciting Incident]&#10;    B --> C[Act 2: Rising Action]&#10;    C --> D{Decision Point?}&#10;    D -->|Yes| E[Act 3: Climax]&#10;    D -->|No| F[Alternative Path]&#10;    E --> G[Act 3: Resolution]&#10;    F --> G"
+                  placeholder="Example:&#10;flowchart TD&#10;    A[Opening Scene] --> B[Inciting Incident]&#10;    B --> C{Accept the challenge?}&#10;    C -->|Yes| D[Face the conflict]&#10;    C -->|No| E[Avoid the conflict]&#10;    D --> F{Succeed?}&#10;    F -->|Yes| G[Victory]&#10;    F -->|No| H[Defeat]&#10;    E --> I[Alternative ending]"
                 />
               </div>
             </div>
