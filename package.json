@@ -1,0 +1,22 @@
+{
+  "name": "cinemap",
+  "version": "1.0.0",
+  "description": "Cinemap - Story visualization application",
+  "private": true,
+  "workspaces": [
+    "stubby-fe"
+  ],
+  "scripts": {
+    "dev": "cd stubby-fe && npm start",
+    "build": "cd stubby-fe && npm run build",
+    "install-deps": "cd stubby-fe && npm install"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/jonathanywang/cinemap.git"
+  },
+  "engines": {
+    "node": ">=16.0.0",
+    "npm": ">=8.0.0"
+  }
+}

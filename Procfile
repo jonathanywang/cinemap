@@ -1,0 +1,1 @@
+web: cd plot-ai/backend/plot-backend && gunicorn plot.wsgi:application --bind 0.0.0.0:$PORT

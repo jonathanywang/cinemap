@@ -1,0 +1,12 @@
+{
+  "buildCommand": "cd stubby-fe && npm run build",
+  "outputDirectory": "stubby-fe/build",
+  "installCommand": "cd stubby-fe && npm install",
+  "devCommand": "cd stubby-fe && npm start",
+  "rewrites": [
+    {
+      "source": "/(.*)",
+      "destination": "/index.html"
+    }
+  ]
+}
