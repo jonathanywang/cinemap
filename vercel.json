@@ -1,12 +1,22 @@
 {
-  "buildCommand": "cd stubby-fe && npm run build",
-  "outputDirectory": "stubby-fe/build",
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "buildCommand": "cd stubby-fe && npm install && npm run build",
   "installCommand": "cd stubby-fe && npm install",
+  "outputDirectory": "stubby-fe/build",
   "devCommand": "cd stubby-fe && npm start",
+  "framework": "create-react-app",
   "rewrites": [
     {
       "source": "/(.*)",
       "destination": "/index.html"
+    }
+  ],
+  "headers": [
+    {
+      "source": "/static/(.*)\\.(js|css)",
+      "headers": [
+        { "key": "Cache-Control", "value": "public, max-age=31536000, immutable" }
+      ]
     }
   ]
 }

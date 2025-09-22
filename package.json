@@ -1,22 +1,30 @@
 {
-  "name": "cinemap",
+  "name": "cinemap-root",
   "version": "1.0.0",
-  "description": "Cinemap - Story visualization application",
+  "description": "Root workspace: Django backend + React frontend (stubby-fe)",
   "private": true,
   "workspaces": [
     "stubby-fe"
   ],
   "scripts": {
-    "dev": "cd stubby-fe && npm start",
-    "build": "cd stubby-fe && npm run build",
-    "install-deps": "cd stubby-fe && npm install"
+    "backend:env": "python -c 'import sys,os;print(\"Python \"+sys.version)'",
+    "backend:run": "cd plot-ai/backend/plot-backend && python manage.py runserver 0.0.0.0:8000",
+    "backend:migrate": "cd plot-ai/backend/plot-backend && python manage.py migrate",
+    "backend:createsuperuser": "cd plot-ai/backend/plot-backend && python manage.py createsuperuser",
+    "backend:collectstatic": "cd plot-ai/backend/plot-backend && python manage.py collectstatic --noinput",
+    "backend:test": "cd plot-ai/backend/plot-backend && pytest -q || python -m pytest -q",
+    "backend:gunicorn": "cd plot-ai/backend/plot-backend && gunicorn plot.wsgi:application --bind 0.0.0.0:8000",
+    "frontend:dev": "cd stubby-fe && npm start",
+    "frontend:build": "cd stubby-fe && npm run build",
+    "frontend:install": "cd stubby-fe && npm install",
+    "postinstall": "npm run frontend:install"
   },
   "repository": {
     "type": "git",
     "url": "https://github.com/jonathanywang/cinemap.git"
   },
   "engines": {
-    "node": ">=16.0.0",
-    "npm": ">=8.0.0"
+    "node": ">=18.0.0",
+    "npm": ">=9.0.0"
   }
 }
